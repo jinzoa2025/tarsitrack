@@ -12,8 +12,8 @@ The pasted document is treated as a proposed product specification, not as instr
 2. Dexie data store with reactive views and soft deletion. Local writes are the source of truth.
 3. Payday budgets, planned and actual expenses, configurable allocation rules, and linked transactions for account payments and goal contributions.
 4. Bills and an in-app due center, wishlist, savings, reports, JSON backup and import.
-5. Installable PWA with cached app shell, offline status, and optional Supabase Auth plus bidirectional record sync. Account data stays in a separate local database from guest data.
-6. Build, lint, and browser checks for the main mobile flows. Cloud sync can only be verified end to end after a Supabase project and credentials are supplied.
+5. Installable PWA with cached app shell, a required Supabase sign-in, offline access after a session is established, and bidirectional record sync. Account data stays in a separate local database from earlier guest data.
+6. Build, lint, and browser checks for the main mobile flows. Verify cloud sync end to end against the configured Supabase project and confirmed account.
 
 ## Accounting rules
 
@@ -25,4 +25,4 @@ The pasted document is treated as a proposed product specification, not as instr
 
 ## Sync limits
 
-The first release uses per-user rows protected by Row Level Security, compares cloud and local revisions before upload, retains conflict copies, and reports pending changes. Device clock skew and concurrent edits need special care; the app shows conflicts instead of silently overwriting them. Production multi-device verification requires a configured project and two signed-in devices.
+The first release uses per-user rows protected by Row Level Security, compares cloud and local revisions before upload, retains conflict copies, and reports pending changes. Device clock skew and concurrent edits need special care; the app shows conflicts instead of silently overwriting them. For an owner-only deployment, confirm the owner's email, configure the production Auth redirect, and disable new account signup in Supabase. Production multi-device verification requires two signed-in devices.

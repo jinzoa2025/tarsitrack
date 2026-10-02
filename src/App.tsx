@@ -1,7 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { User } from '@supabase/supabase-js'
-import { ArrowsClockwise, Check, CloudArrowUp, DotsThree, DownloadSimple, House, CalendarDots, ChartBar, Plus, Receipt, UploadSimple, List, ShoppingBag } from '@phosphor-icons/react'
+import { ArrowsClockwise, Check, CloudArrowUp, DotsThree, DownloadSimple, House, CalendarDots, ChartBar, Plus, Receipt, UploadSimple, List, ShoppingBag, LockKey, ShieldCheck } from '@phosphor-icons/react'
 import { active, accountDb, guestDb, isoDate, loadDemo, removeEntry, saveEntry, type Entry, type Kind, type TrackerDB } from './lib/data'
 import { supabase, synchronize } from './lib/sync'
 import { EntryForm, type FormConfig } from './EntryForm'
@@ -19,26 +19,73 @@ const nav = [
   { id: 'more' as Page, label: 'More', icon: DotsThree },
 ]
 
-function AuthPanel({ user, onSync }: { user: User | null; onSync: () => void }) {
+async function downloadBackup(source: TrackerDB, guest = false) {
+  const rows = await source.entries.toArray()
+  const blob = new Blob([JSON.stringify({ format: 'tarsitrack-v1', exportedAt: new Date().toISOString(), entries: rows }, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `tarsitrack-${guest ? 'earlier-guest-' : ''}backup-${isoDate()}.json`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
+function AuthPanel({ onSync }: { onSync: () => void }) {
+  const guestCount = useLiveQuery(() => guestDb.entries.count(), []) || 0
+  return <><div className="auth-actions"><button className="subtle-button" onClick={onSync}><ArrowsClockwise size={16} /> Sync now</button><button className="text-button" onClick={() => void supabase?.auth.signOut()}>Sign out</button></div>{guestCount > 0 && <div className="guest-backup"><p>{guestCount} earlier guest records are still on this device. Export them, then use Import backup above to copy them into your account.</p><button className="subtle-button" onClick={() => void downloadBackup(guestDb, true)}><DownloadSimple size={16} /> Export earlier records</button></div>}</>
+}
+
+function AuthGate({ loading }: { loading: boolean }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [working, setWorking] = useState(false)
-  if (!supabase) return null
-  async function authenticate(mode: 'login' | 'signup') {
+  async function signIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     if (!supabase) return
-    setWorking(true); setMessage('')
-    const { error } = mode === 'login' ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password })
-    setMessage(error?.message || (mode === 'signup' ? 'Check your email to confirm the account.' : 'Signed in.'))
-    setWorking(false)
+    setWorking(true)
+    setMessage('')
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+      if (error) setMessage(error.message)
+      else setPassword('')
+    } catch {
+      setMessage('Could not reach the sign-in service. Check your connection and try again.')
+    } finally {
+      setWorking(false)
+    }
   }
-  return user ? <div className="auth-actions"><button className="subtle-button" onClick={onSync}><ArrowsClockwise size={16} /> Sync now</button><button className="text-button" onClick={() => void supabase?.auth.signOut()}>Sign out</button></div> : <form className="auth-form" onSubmit={(event) => { event.preventDefault(); void authenticate('login') }}><label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} required /></label><div className="auth-actions"><button className="primary-button" disabled={working}>Sign in</button><button type="button" className="subtle-button" disabled={working} onClick={() => void authenticate('signup')}>Create account</button></div>{message && <p className="form-message">{message}</p>}</form>
+  return <div className="auth-screen"><div className="auth-glow" aria-hidden="true" />
+    <div className="auth-layout">
+      <section className="auth-story" aria-label="TarsiTrack"><div className="auth-brand"><span className="auth-brand-mark"><SproutMark size={46} /></span><span><strong>Tarsi<span>Track</span></strong><small>Family finance, in focus</small></span></div><div className="auth-story-copy"><p className="eyebrow">A BRIGHTER TOMORROW STARTS HERE</p><h1>Small steps.<br /><em>Brighter tomorrows.</em></h1><p>Your family's plans, bills, and goals in one private space.</p></div><div className="auth-story-foot"><ShieldCheck size={20} /> Your records stay with your account and this device.</div></section>
+      <section className="auth-card"><div className="auth-lock"><LockKey size={25} weight="duotone" /></div><p className="eyebrow">PRIVATE WORKSPACE</p><h2>Welcome back</h2><p className="auth-description">Sign in to open your family finance tracker.</p>
+        {loading ? <p className="auth-state" role="status">Checking your session…</p> : !supabase ? <p className="auth-state" role="alert">Sign-in is unavailable until the Supabase project is configured.</p> : <form className="auth-gate-form" onSubmit={(event) => void signIn(event)}><label>Email address<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="auth-submit" disabled={working}>{working ? 'Signing in…' : 'Sign in securely'}<span aria-hidden="true">→</span></button>{message && <p className="auth-error" role="alert">{message}</p>}</form>}
+        <div className="auth-card-foot"><span className="status-dot" /> Offline access remains available on a device with an active session.</div>
+      </section>
+    </div>
+  </div>
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null)
-  const userId = user?.id
-  const db = useMemo<TrackerDB>(() => userId ? accountDb(userId) : guestDb, [userId])
+  const [session, setSession] = useState<{ ready: boolean; user: User | null }>(() => ({ ready: !supabase, user: null }))
+  useEffect(() => {
+    if (!supabase) return
+    let mounted = true
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => {
+      if (mounted) setSession({ ready: true, user: next?.user || null })
+    })
+    void supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setSession((current) => current.ready ? current : { ready: true, user: data.session?.user || null })
+    }).catch(() => { if (mounted) setSession((current) => current.ready ? current : { ready: true, user: null }) })
+    return () => { mounted = false; listener.subscription.unsubscribe() }
+  }, [])
+  if (!session.ready || !session.user) return <AuthGate loading={!session.ready} />
+  return <Workspace key={session.user.id} user={session.user} />
+}
+
+function Workspace({ user }: { user: User }) {
+  const userId = user.id
+  const db = useMemo<TrackerDB>(() => accountDb(userId), [userId])
   const [page, setPage] = useState<Page>('home')
   const [tab, setTab] = useState<PlanningTab>('paydays')
   const [form, setForm] = useState<FormConfig | null>(null)
@@ -56,14 +103,7 @@ export default function App() {
   const transactions = useMemo(() => all.filter((item) => item.kind === 'transaction').sort((a, b) => (b.date || '').localeCompare(a.date || '')), [all])
   const cycle = paydays.find((item) => item.id === selectedCycle) || paydays.find((item) => transactions.some((tx) => tx.paydayId === item.id && tx.transactionType === 'income')) || paydays[0]
   const pending = entries?.filter((item) => item.syncStatus === 'pending').length || 0
-
-  useEffect(() => {
-    if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user || null))
-    return () => listener.subscription.unsubscribe()
-  }, [])
-  useEffect(() => () => { if (db !== guestDb) db.close() }, [db])
+  useEffect(() => () => db.close(), [db])
 
   const runSync = useCallback(async () => {
     if (!userId || !supabase || syncBusy.current || !navigator.onLine) return
@@ -122,16 +162,7 @@ export default function App() {
     toast('Deleted on this device')
     if (user) void runSync()
   }
-  async function exportBackup() {
-    const rows = await db.entries.toArray()
-    const blob = new Blob([JSON.stringify({ format: 'tarsitrack-v1', exportedAt: new Date().toISOString(), entries: rows }, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = `tarsitrack-backup-${isoDate()}.json`
-    anchor.click()
-    URL.revokeObjectURL(url)
-  }
+  async function exportBackup() { await downloadBackup(db) }
   async function importBackup(file?: File) {
     if (!file) return
     try {
@@ -154,7 +185,7 @@ export default function App() {
         {page === 'activity' && <ActivityView all={all} open={open} transactions={transactions} cycle={cycle} />}
         {page === 'planning' && <PlanningView all={all} open={open} tab={tab} setTab={setTab} cycle={cycle} paydays={paydays} onToggleReminder={(item, enabled) => void toggleBillReminder(item, enabled)} />}
         {page === 'reports' && <Suspense fallback={<div className="panel">Loading reports…</div>}><ReportsView all={all} paydays={paydays} transactions={transactions} /></Suspense>}
-        {page === 'more' && <section className="page-section"><div className="page-intro"><div><p className="eyebrow">YOUR SPACE</p><h2>Keep your data close.</h2><p>Back up your records, review sync and customize categories.</p></div></div><div className="planning-grid"><section className="panel"><SectionHead title="Explore" /><div className="action-stack"><button className="action-row" onClick={() => setPage('reports')}><ChartBar size={22} /> Reports</button><button className="action-row" onClick={() => { setPage('planning'); setTab('wishlist') }}><ShoppingBag size={22} /> Desires to Buy</button></div></section><section className="panel"><SectionHead title="Data & backup" /><p className="muted">Your normal entries save to this device immediately. Export a JSON backup whenever you want a separate copy.</p><div className="action-stack"><button className="action-row" onClick={exportBackup}><DownloadSimple size={22} /> Export backup</button><button className="action-row" onClick={() => fileRef.current?.click()}><UploadSimple size={22} /> Import backup</button><input hidden ref={fileRef} type="file" accept="application/json,.json" onChange={(event) => void importBackup(event.target.files?.[0])} /></div></section><section className="panel"><SectionHead title="Cloud sync" /><p className="muted">{supabase ? user ? `Signed in as ${user.email}. This account has a separate device database.` : 'Sign in to sync an account across your devices. Guest data stays separate.' : 'Cloud sync is available after a Supabase project is configured. Local tracking works now.'}</p><div className="sync-card"><CloudArrowUp size={24} /><div><strong>{online ? syncMessage : 'Offline · changes saved here'}</strong><small>{pending} pending changes · {conflicts.length} conflicts</small></div></div>{supabase && <AuthPanel user={user} onSync={() => void runSync()} />}{conflicts.map((conflict) => <div className="conflict-card" key={conflict.id}><strong>Review: {conflict.local.name}</strong><p>Device and cloud both changed this record.</p><div><button onClick={async () => { await db.entries.put({ ...conflict.local, baseVersion: conflict.remote.baseVersion, syncStatus: 'pending' }); await db.conflicts.delete(conflict.id); void runSync() }}>Use device</button><button onClick={async () => { await db.entries.put(conflict.remote); await db.conflicts.delete(conflict.id) }}>Use cloud</button></div></div>)}</section><section className="panel"><SectionHead title="Categories" action="Add category" onAction={() => open('category')} /><div className="category-cloud">{Array.from(new Set(['Food', 'Family', 'Utilities', 'Transport', 'Health', 'Shopping', 'Loans', 'Cards', ...all.filter((item) => item.kind === 'category').map((item) => item.name)])).map((name) => <span key={name}>{name}</span>)}</div>{all.filter((item) => item.kind === 'category').map((item) => <Row key={item.id} item={item} onClick={() => open('category', item)} />)}</section></div></section>}
+        {page === 'more' && <section className="page-section"><div className="page-intro"><div><p className="eyebrow">YOUR SPACE</p><h2>Keep your data close.</h2><p>Back up your records, review sync and customize categories.</p></div></div><div className="planning-grid"><section className="panel"><SectionHead title="Explore" /><div className="action-stack"><button className="action-row" onClick={() => setPage('reports')}><ChartBar size={22} /> Reports</button><button className="action-row" onClick={() => { setPage('planning'); setTab('wishlist') }}><ShoppingBag size={22} /> Desires to Buy</button></div></section><section className="panel"><SectionHead title="Data & backup" /><p className="muted">Your normal entries save to this device immediately. Export a JSON backup whenever you want a separate copy.</p><div className="action-stack"><button className="action-row" onClick={exportBackup}><DownloadSimple size={22} /> Export backup</button><button className="action-row" onClick={() => fileRef.current?.click()}><UploadSimple size={22} /> Import backup</button><input hidden ref={fileRef} type="file" accept="application/json,.json" onChange={(event) => void importBackup(event.target.files?.[0])} /></div></section><section className="panel"><SectionHead title="Cloud sync" /><p className="muted">Signed in as {user.email}. This account has a separate device database.</p><div className="sync-card"><CloudArrowUp size={24} /><div><strong>{online ? syncMessage : 'Offline · changes saved here'}</strong><small>{pending} pending changes · {conflicts.length} conflicts</small></div></div><AuthPanel onSync={() => void runSync()} />{conflicts.map((conflict) => <div className="conflict-card" key={conflict.id}><strong>Review: {conflict.local.name}</strong><p>Device and cloud both changed this record.</p><div><button onClick={async () => { await db.entries.put({ ...conflict.local, baseVersion: conflict.remote.baseVersion, syncStatus: 'pending' }); await db.conflicts.delete(conflict.id); void runSync() }}>Use device</button><button onClick={async () => { await db.entries.put(conflict.remote); await db.conflicts.delete(conflict.id) }}>Use cloud</button></div></div>)}</section><section className="panel"><SectionHead title="Categories" action="Add category" onAction={() => open('category')} /><div className="category-cloud">{Array.from(new Set(['Food', 'Family', 'Utilities', 'Transport', 'Health', 'Shopping', 'Loans', 'Cards', ...all.filter((item) => item.kind === 'category').map((item) => item.name)])).map((name) => <span key={name}>{name}</span>)}</div>{all.filter((item) => item.kind === 'category').map((item) => <Row key={item.id} item={item} onClick={() => open('category', item)} />)}</section></div></section>}
       </div></main></div>
     <nav className="bottom-nav" aria-label="Mobile navigation"><button className={page === 'home' ? 'active' : ''} onClick={() => setPage('home')}><House size={21} weight={page === 'home' ? 'fill' : 'regular'} /><span>Home</span></button><button className={page === 'activity' ? 'active' : ''} onClick={() => setPage('activity')}><Receipt size={21} weight={page === 'activity' ? 'fill' : 'regular'} /><span>Expenses</span></button><button className="mobile-add" aria-label="Add entry" onClick={() => open('transaction')}><Plus size={28} /></button><button className={page === 'planning' && tab === 'bills' ? 'active' : ''} onClick={() => { setPage('planning'); setTab('bills') }}><CalendarDots size={21} weight={page === 'planning' && tab === 'bills' ? 'fill' : 'regular'} /><span>Bills</span></button><button className={page === 'more' || page === 'reports' || (page === 'planning' && tab !== 'bills') ? 'active' : ''} onClick={() => setPage('more')}><DotsThree size={21} weight={page === 'more' || page === 'reports' || (page === 'planning' && tab !== 'bills') ? 'fill' : 'regular'} /><span>More</span></button></nav>
     {form && <EntryForm key={form.entry?.id || `${form.kind}-${form.preset?.accountId || ''}`} config={form} all={all} busy={busy} onClose={() => setForm(null)} onSave={save} onDelete={form.entry ? () => void deleteItem(form.entry!) : undefined} />}
