@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Bank, CalendarDots, CaretLeft, CaretRight, ChartBar, Check, ClockCounterClockwise, CreditCard, Plus, Trash } from '@phosphor-icons/react'
 import { isoDate, money, shortDate, type Entry, type SheetRow } from './lib/data'
 import { scheduledForMonth, type ScheduleItem } from './lib/schedule'
-import { sheetTemplate, sheetTotals, sheetsForPeriod, summarizeSheets, type ReportPeriod } from './lib/paydaySheet'
+import { additionalExpense, monthSummary, sheetTemplate, sheetTotals, sheetsForPeriod, summarizeSheets, type ReportPeriod } from './lib/paydaySheet'
 
 export function TrackerMark({ size = 28 }: { size?: number }) {
   return <span className="tracker-mark" style={{ width: size, height: size }} aria-hidden="true"><i /><i /></span>
@@ -20,25 +20,57 @@ export function PaydayPage({ sheet, all, onNew, onSave, onHistory, onTemplate, o
   </section>
 }
 
+export function MonthSummary({ sheets, initialMonth, onOpen }: { sheets: Entry[]; initialMonth: string; onOpen: (id: string) => void }) {
+  const [month, setMonth] = useState(initialMonth)
+  const totals = monthSummary(sheets, month)
+  return <section className="simple-month-summary" aria-label="Monthly payday summary">
+    <div className="simple-month-heading"><h3>Month at a glance</h3><input type="month" aria-label="Summary month" value={month} onChange={(event) => setMonth(event.target.value || initialMonth)} /></div>
+    <div className="simple-month-metrics"><div><span>Payday expenses</span><strong>{money(totals.rows)}</strong></div><div><span>Remaining money</span><strong>{totals.remaining === undefined ? 'Income needed' : money(totals.remaining)}</strong></div></div>
+    <p>{totals.sheets.length} payday{totals.sheets.length === 1 ? '' : 's'} · All rows, including extra expenses{totals.drafts > 0 && ` · ${totals.drafts} awaiting income`}</p>
+    {totals.sheets.length > 0 && <details><summary>Paydays & row breakdown</summary><div className="simple-month-table"><div className="simple-month-table-head"><span>Payday</span><span>Expenses</span><span>Remaining</span></div>{totals.sheets.map((sheet) => { const total = sheetTotals(sheet); return <button key={sheet.id} onClick={() => onOpen(sheet.id)}><span>{shortDate(sheet.date)}</span><b>{money(total.rows)}</b><b>{total.remaining === undefined ? '—' : money(total.remaining)}</b></button> })}</div><div className="simple-month-rows">{totals.byName.map(([name, amount]) => <div key={name}><span>{name}</span><strong>{money(amount)}</strong></div>)}</div></details>}
+  </section>
+}
+
 function SheetEditor({ sheet, sheets, onSave, onSelect }: { sheet: Entry; sheets: Entry[]; onSave: (sheet: Entry, values: Partial<Entry>) => Promise<void>; onSelect: (id: string) => void }) {
   const [income, setIncome] = useState<number | undefined>(sheet.sheetIncome)
   const [rows, setRows] = useState<SheetRow[]>(() => sheet.sheetRows || [])
   const [date, setDate] = useState(sheet.date || isoDate())
   const [saveStatus, setSaveStatus] = useState<'ready' | 'saving' | 'saved' | 'error'>('ready')
+  const [adding, setAdding] = useState(false)
+  const [expenseName, setExpenseName] = useState('')
+  const [expenseAmount, setExpenseAmount] = useState('')
+  const [expenseError, setExpenseError] = useState('')
+  const saveQueue = useRef(Promise.resolve())
+  const revision = useRef(0)
   const totals = sheetTotals({ sheetIncome: income, sheetTitheRate: sheet.sheetTitheRate, sheetRows: rows })
-  const persist = async (values: Partial<Entry>) => {
+  const persist = (values: Partial<Entry>) => {
+    const snapshot = { sheetIncome: income, sheetRows: rows, date, ...values }
+    const version = ++revision.current
     setSaveStatus('saving')
-    try { await onSave(sheet, { sheetIncome: income, sheetRows: rows, date, ...values }); setSaveStatus('saved') }
-    catch { setSaveStatus('error') }
+    saveQueue.current = saveQueue.current.then(async () => {
+      try { await onSave(sheet, snapshot); if (version === revision.current) setSaveStatus('saved') }
+      catch { if (version === revision.current) setSaveStatus('error') }
+    })
   }
+  function addExpense(event: React.FormEvent) {
+    event.preventDefault()
+    try {
+      const extra = additionalExpense(expenseName, Number(expenseAmount.replace(/,/g, '')))
+      const next = [...rows, extra]
+      setRows(next); persist({ sheetRows: next }); setExpenseName(''); setExpenseAmount(''); setExpenseError(''); setAdding(false)
+    } catch (error) { setExpenseError(error instanceof Error ? error.message : 'Check the expense details.') }
+  }
+  const liveSheets = sheets.map((item) => item.id === sheet.id ? { ...item, sheetIncome: income, sheetRows: rows, date } : item)
   return <>
-    <div className="simple-date-line"><label htmlFor="simple-cycle">Payday date</label><select id="simple-cycle" value={sheet.id} onChange={(event) => onSelect(event.target.value)}>{sheets.map((item) => <option key={item.id} value={item.id}>{shortDate(item.date)}</option>)}</select></div>
-    <div className="simple-summary-card"><div className="simple-summary-row"><label htmlFor="sheet-income">Income</label><input id="sheet-income" inputMode="decimal" defaultValue={amountText(sheet.sheetIncome)} placeholder="Enter income" onChange={(event) => setIncome(parseAmount(event.target.value))} onBlur={() => void persist({ sheetIncome: income })} /></div><div className="simple-summary-row"><span>Tithes <small>{totals.rate}%</small></span><strong>{totals.tithes === undefined ? '—' : money(totals.tithes)}</strong></div><div className="simple-summary-row tinted"><span>Money after tithes</span><strong>{totals.moneyAfterTithes === undefined ? '—' : money(totals.moneyAfterTithes)}</strong></div></div>
-    <div className="simple-remaining"><span>Remaining money</span><strong>{totals.remaining === undefined ? 'Enter income' : money(totals.remaining)}</strong><small>Income minus tithes and the rows below</small></div>
-    <div className="simple-section-title"><h3>Payday rows</h3><span>Tap an amount to edit</span></div>
-    <div className="simple-row-list">{rows.map((row, index) => <label className="simple-sheet-row" key={row.id}><span>{row.name}</span><input inputMode="decimal" aria-label={`${row.name} amount`} defaultValue={amountText(row.amount)} onChange={(event) => setRows((current) => current.map((item, i) => i === index ? { ...item, amount: parseAmount(event.target.value) || 0 } : item))} onBlur={() => void persist({ sheetRows: rows })} /></label>)}</div>
-    <div className="simple-total"><span>Total rows</span><strong>{money(totals.rows)}</strong></div>
-    <div className="simple-sheet-footer"><label>Date on this sheet <input type="date" value={date} onChange={(event) => setDate(event.target.value)} onBlur={() => void persist({ date })} /></label><small role="status">{saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Could not save. Edit and try again.' : saveStatus === 'saved' ? 'Saved on this device' : 'Changes save after editing'}</small></div>
+    <MonthSummary sheets={liveSheets} initialMonth={date.slice(0, 7)} onOpen={onSelect} />
+    <div className="simple-date-line"><label htmlFor="simple-cycle">Payday date</label><select id="simple-cycle" value={sheet.id} onChange={(event) => onSelect(event.target.value)}>{sheets.map((item) => <option key={item.id} value={item.id}>{shortDate(item.id === sheet.id ? date : item.date)}</option>)}</select></div>
+    <div className="simple-summary-card"><div className="simple-summary-row"><label htmlFor="sheet-income">Income</label><input id="sheet-income" inputMode="decimal" defaultValue={amountText(sheet.sheetIncome)} placeholder="Enter income" onChange={(event) => setIncome(parseAmount(event.target.value))} onBlur={() => persist({ sheetIncome: income })} /></div><div className="simple-summary-row"><span>Tithes <small>{totals.rate}%</small></span><strong>{totals.tithes === undefined ? '—' : money(totals.tithes)}</strong></div><div className="simple-summary-row tinted"><span>Money after tithes</span><strong>{totals.moneyAfterTithes === undefined ? '—' : money(totals.moneyAfterTithes)}</strong></div></div>
+    <div className="simple-remaining"><span>This payday · remaining</span><strong>{totals.remaining === undefined ? 'Enter income' : money(totals.remaining)}</strong></div>
+    <div className="simple-section-title"><h3>Payday expenses</h3><button className="simple-inline-add" onClick={() => setAdding(!adding)} aria-expanded={adding}><Plus size={15} /> Add expense</button></div>
+    <div className="simple-row-list">{rows.map((row) => <div className={`simple-sheet-row ${row.additional ? 'is-additional' : ''}`} key={row.id}><label htmlFor={`amount-${row.id}`}>{row.name}{row.additional && <small>This payday only</small>}</label><input id={`amount-${row.id}`} inputMode="decimal" aria-label={`${row.name} amount`} defaultValue={amountText(row.amount)} onChange={(event) => setRows((current) => current.map((item) => item.id === row.id ? { ...item, amount: parseAmount(event.target.value) || 0 } : item))} onBlur={() => persist({ sheetRows: rows })} />{row.additional && <button className="simple-remove-expense" aria-label={`Remove ${row.name}`} onClick={() => { const next = rows.filter((item) => item.id !== row.id); setRows(next); persist({ sheetRows: next }) }}><Trash size={16} /></button>}</div>)}</div>
+    {adding && <form className="simple-extra-form" onSubmit={addExpense}><div className="simple-extra-heading"><strong>Extra expense</strong><span>For this payday only</span></div><label>Expense name<input autoFocus value={expenseName} onChange={(event) => setExpenseName(event.target.value)} placeholder="e.g. School supplies" required maxLength={80} /></label><label>Amount (₱)<input inputMode="decimal" value={expenseAmount} onChange={(event) => setExpenseAmount(event.target.value)} placeholder="0.00" required /></label><div className="simple-extra-actions"><button type="button" className="simple-outline-button" onClick={() => { setAdding(false); setExpenseError('') }}>Cancel</button><button className="simple-primary-button" type="submit">Add expense</button></div>{expenseError && <p role="alert">{expenseError}</p>}</form>}
+    <div className="simple-total"><span>Total expenses</span><strong>{money(totals.rows)}</strong></div>
+    <div className="simple-sheet-footer"><label>Sheet date <input type="date" value={date} onChange={(event) => { if (event.target.value) setDate(event.target.value) }} onBlur={() => persist({ date })} /></label><small role="status">{saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? <button onClick={() => persist({})}>Save failed · Retry</button> : saveStatus === 'saved' ? 'Saved on this device' : 'Saves after editing'}</small></div>
   </>
 }
 
@@ -46,7 +78,7 @@ export function HistoryPage({ sheets, onOpen, onNew }: { sheets: Entry[]; onOpen
   const completed = sheets.filter((sheet) => sheet.sheetIncome !== undefined)
   const summary = summarizeSheets(completed)
   return <section className="simple-page"><div className="simple-page-heading"><div><h2>Payday history</h2><p>Each sheet keeps its own numbers.</p></div><button className="simple-outline-button" onClick={onNew}><Plus size={17} /> New</button></div>
-    <div className="simple-history-hero"><span>Remaining across saved sheets</span><strong>{money(summary.remaining)}</strong><small>{completed.length} completed payday{completed.length === 1 ? '' : 's'}</small></div>
+    <MonthSummary sheets={sheets} initialMonth={sheets[0]?.date?.slice(0, 7) || isoDate().slice(0, 7)} onOpen={onOpen} /><div className="simple-history-all"><span>All saved paydays · remaining</span><strong>{money(summary.remaining)}</strong></div>
     {sheets.length ? <div className="simple-history-list">{sheets.map((sheet) => { const totals = sheetTotals(sheet); return <button className="simple-history-card" key={sheet.id} onClick={() => onOpen(sheet.id)}><span className="simple-history-top"><strong>{shortDate(sheet.date)}</strong><small>{totals.income === undefined ? 'Draft' : 'Sheet'}</small></span><b>{totals.remaining === undefined ? 'Enter income' : money(totals.remaining)}</b><span className="simple-history-meta">Income {totals.income === undefined ? '—' : money(totals.income)} <span>{sheet.sheetRows?.length || 0} rows</span></span><span className="simple-history-open">Open payday sheet <ArrowRight size={15} /></span></button> })}</div> : <div className="simple-empty-card"><ClockCounterClockwise size={32} /><h3>No payday sheets yet</h3><p>Once you create a sheet, it will appear here.</p><button className="simple-primary-button" onClick={onNew}>Create payday sheet</button></div>}
     <p className="simple-note">New paydays copy your template. Editing a sheet does not change older paydays.</p>
   </section>
@@ -80,7 +112,7 @@ export function ReportsPage({ sheets }: { sheets: Entry[] }) {
   return <section className="simple-page"><div className="simple-page-heading"><div><h2>Breakdown</h2><p>Choose the time period you want to see.</p></div></div>
     <div className="simple-period-tabs" role="group" aria-label="Report period">{([['payday', 'Payday'], ['month', 'Monthly'], ['year', 'Yearly']] as const).map(([id, label]) => <button key={id} className={period === id ? 'active' : ''} aria-pressed={period === id} onClick={() => { setPeriod(id); setChoice('') }}>{label}</button>)}</div>
     <label className="simple-period-choice">Choose {period === 'month' ? 'month' : period === 'year' ? 'year' : 'payday'}<select value={activeChoice} onChange={(event) => setChoice(event.target.value)} disabled={!options.length}>{options.length ? options.map((option) => <option key={option.key} value={option.key}>{option.label}</option>) : <option value="">No saved sheets</option>}</select></label>
-    {included.length ? <><p className="simple-report-caption">{options.find((option) => option.key === activeChoice)?.label} · {included.length} payday{included.length === 1 ? '' : 's'}</p><div className="simple-report-metrics"><div><span>Income</span><strong>{money(totals.income)}</strong></div><div><span>Tithes</span><strong>{money(totals.tithes)}</strong></div></div><div className="simple-report-total"><span>Total payday rows</span><strong>{money(totals.rows)}</strong><div><span>Remaining money</span><b>{money(totals.remaining)}</b></div></div><div className="simple-section-title"><h3>By row</h3><span>Share of total</span></div><div className="simple-report-bars">{totals.byName.map(([name, amount]) => <div key={name}><span>{name}<strong>{money(amount)}</strong></span><i><b style={{ width: `${totals.rows ? Math.max(2, amount / totals.rows * 100) : 0}%` }} /></i></div>)}</div><p className="simple-note">This view totals payday allocations. Paid transactions stay in Detailed expenses under More.</p></> : <div className="simple-empty-card"><ChartBar size={34} /><h3>No sheets in this period</h3><p>Create a payday sheet with income to see its breakdown.</p></div>}
+    {included.length ? <><p className="simple-report-caption">{options.find((option) => option.key === activeChoice)?.label} · {included.length} payday{included.length === 1 ? '' : 's'}</p><div className="simple-report-metrics"><div><span>Income</span><strong>{money(totals.income)}</strong></div><div><span>Tithes</span><strong>{money(totals.tithes)}</strong></div></div><div className="simple-report-total"><span>Payday expenses</span><strong>{money(totals.rows)}</strong><div><span>Remaining money</span><b>{money(totals.remaining)}</b></div></div><div className="simple-section-title"><h3>Expenses by row</h3><span>Share of total</span></div><div className="simple-report-bars">{totals.byName.map(([name, amount]) => <div key={name}><span>{name}<strong>{money(amount)}</strong></span><i><b style={{ width: `${totals.rows ? Math.max(2, amount / totals.rows * 100) : 0}%` }} /></i></div>)}</div><p className="simple-note">This view totals payday allocations. Paid transactions stay in Detailed expenses under More.</p></> : <div className="simple-empty-card"><ChartBar size={34} /><h3>No sheets in this period</h3><p>Create a payday sheet with income to see its breakdown.</p></div>}
   </section>
 }
 

@@ -20,7 +20,8 @@ The production build includes a PWA manifest, icons and a cached app shell. Brow
 
 ## Main flows
 
-- **Payday:** create one sheet per date. Enter income and adjust copied template rows; tithes, total rows and remaining money recalculate automatically.
+- **Payday:** create one sheet per date. Enter income, adjust copied rows, or use **Add expense** for an extra expense on that payday only. Tithes, total expenses and remaining money recalculate automatically. Extra expenses do not change the template or other cycles.
+- **Payday / History monthly summary:** choose a month to see expenses and remaining money across its sheets. Expand the summary for each payday and combined totals by row. Draft rows count toward expenses; remaining money waits until all sheets have income.
 - **History:** reopen earlier sheets without changing the template or other paydays.
 - **Bills:** see scheduled dates and record payments.
 - **More → Reports:** check payday, monthly and yearly totals from the simple sheets.

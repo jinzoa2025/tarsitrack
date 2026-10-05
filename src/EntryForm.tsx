@@ -36,7 +36,7 @@ export function EntryForm({ config, all, busy, onClose, onSave, onDelete }: {
     if (kind === 'rule' && !result.ruleMode) result.ruleMode = 'income_percent'
     onSave(result)
   }
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><div className="form-sheet" role="dialog" aria-modal="true" aria-label={title}><div className="sheet-head"><div><p className="eyebrow">TARSITRACK</p><h2>{title}</h2></div><button className="icon-button" aria-label="Close" onClick={onClose}><X size={20} /></button></div><form onSubmit={submit}><div className="fields">
+  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><div className="form-sheet" role="dialog" aria-modal="true" aria-label={title}><div className="sheet-head"><div><p className="eyebrow">TRACKER</p><h2>{title}</h2></div><button className="icon-button" aria-label="Close" onClick={onClose}><X size={20} /></button></div><form onSubmit={submit}><div className="fields">
     {kind === 'transaction' && <div className="type-choice">{(['expense', 'income', 'transfer'] as TransactionType[]).map((type) => <button type="button" key={type} className={transactionType === type ? 'active' : ''} onClick={() => change('transactionType', type)}>{txLabels[type]}</button>)}</div>}
     {kind === 'transaction' && field('Entry type', 'transactionType', 'text', Object.entries(txLabels).filter(([value]) => value !== 'adjustment').map(([value, label]) => ({ value, label })))}
     {field(kind === 'payday' ? 'Payday name' : kind === 'transaction' ? 'Description' : 'Name', 'name')}

@@ -11,7 +11,7 @@ export function IconBadge({ kind }: { kind: Kind | TransactionType }) {
 }
 
 export function SproutMark({ size = 34, className = '' }: { size?: number; className?: string }) {
-  return <svg className={className} width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M30 56c3-13 4-29 2-42M31 39c-6-9-12-13-19-16M32 34c7-9 13-14 22-17" stroke="#77F7EE" strokeWidth="2.7" strokeLinecap="round" /><path d="M30 31C17 30 10 21 10 9c13 1 22 10 20 22Z" fill="#63EFFF" /><path d="M33 31c1-13 9-20 22-22-1 13-8 21-22 22Z" fill="#34C7FF" /><path d="M29 43C19 38 9 43 5 55c13 2 22-2 24-12Z" fill="#83F8E9" /><path d="M33 44c6-8 14-11 23-7-3 11-11 17-23 17V44Z" fill="#23BAFF" /></svg>
+  return <svg className={className} width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M30 56c3-13 4-29 2-42M31 39c-6-9-12-13-19-16M32 34c7-9 13-14 22-17" stroke="#7ca572" strokeWidth="2.7" strokeLinecap="round" /><path d="M30 31C17 30 10 21 10 9c13 1 22 10 20 22Z" fill="#89b07b" /><path d="M33 31c1-13 9-20 22-22-1 13-8 21-22 22Z" fill="#4f8054" /><path d="M29 43C19 38 9 43 5 55c13 2 22-2 24-12Z" fill="#aec796" /><path d="M33 44c6-8 14-11 23-7-3 11-11 17-23 17V44Z" fill="#699160" /></svg>
 }
 
 export function BillSymbol({ name }: { name: string }) {

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it, vi } from 'vitest'
 import { cycleTotals, saveEntry, TrackerDB, type Entry } from './data'
-import { defaultRows, sheetTotals, sheetsForPeriod, summarizeSheets, templateName } from './paydaySheet'
+import { additionalExpense, copyRows, defaultRows, monthSummary, sheetTemplate, sheetTotals, sheetsForPeriod, summarizeSheets, templateName } from './paydaySheet'
 
 const base = { updatedAt: '2026-10-05T00:00:00.000Z', syncStatus: 'pending' as const, baseVersion: 0, deviceId: 'test' }
 const august: Entry = { ...base, id: 'august', kind: 'payday', name: 'Aug 5', date: '2026-08-05', sheetIncome: 36000, sheetTitheRate: 10, sheetRows: defaultRows }
@@ -26,6 +26,25 @@ describe('simple payday sheets', () => {
     expect(sheetTotals({ sheetIncome: 1000, sheetTitheRate: 5, sheetRows: [{ id: 'one', name: 'Market', amount: 100 }] }).remaining).toBe(850)
   })
 
+  it('totals every payday and extra expense in the chosen month, excluding other months and deleted sheets', () => {
+    const extra = additionalExpense(' School supplies ', 1250.5)
+    const second = { ...october, id: 'oct-20', date: '2026-10-20', sheetRows: [...copyRows(defaultRows), extra], sheetIncome: 36000 }
+    const deleted = { ...october, id: 'deleted', deletedAt: '2026-10-05' }
+    const result = monthSummary([august, october, second, deleted], '2026-10')
+    expect(result).toMatchObject({ income: 136000, tithes: 13600, rows: 55345.19, remaining: 67054.81, drafts: 0 })
+    expect(result.sheets.map((sheet) => sheet.id)).toEqual(['october', 'oct-20'])
+    expect(result.byName).toContainEqual(['School supplies', 1250.5])
+    expect(result.byName).toContainEqual(['Market', 12000])
+    expect(monthSummary([], '2026-10')).toMatchObject({ rows: 0, remaining: 0 })
+  })
+
+  it('includes draft rows but waits for income before claiming a monthly remaining balance', () => {
+    const draft = { ...october, id: 'draft', sheetIncome: undefined }
+    expect(monthSummary([draft], '2026-10')).toMatchObject({ rows: 28594.69, remaining: undefined, drafts: 1 })
+    expect(() => additionalExpense('', 100)).toThrow()
+    for (const amount of [0, -1, NaN, Infinity]) expect(() => additionalExpense('Extra', amount)).toThrow()
+  })
+
   it('keeps a customized template and sheet after reopening the offline database', async () => {
     const storage = new Map<string, string>()
     vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) || null, setItem: (key: string, value: string) => storage.set(key, value) })
@@ -33,9 +52,15 @@ describe('simple payday sheets', () => {
     const db = new TrackerDB(scope)
     await saveEntry(db, { kind: 'category', name: templateName, sheetTemplate: true, sheetTitheRate: 7.5, sheetRows: [{ id: 'market', name: 'Market', amount: 6500 }] })
     const saved = await saveEntry(db, { kind: 'payday', name: 'Oct 5 payday', date: '2026-10-05', sheetIncome: 100000, sheetTitheRate: 7.5, sheetRows: [{ id: 'market-copy', name: 'Market', amount: 6500 }] })
+    const extra = additionalExpense('Medicine', 750)
+    await saveEntry(db, { ...saved, sheetRows: [...saved.sheetRows!, extra] })
     db.close()
     const reopened = new TrackerDB(scope)
     expect((await reopened.entries.get(saved.id))?.sheetRows?.[0].amount).toBe(6500)
+    expect((await reopened.entries.get(saved.id))?.sheetRows?.[1]).toMatchObject({ name: 'Medicine', amount: 750, additional: true })
+    const nextTemplate = sheetTemplate(await reopened.entries.toArray())
+    expect(copyRows(nextTemplate.rows)).toHaveLength(1)
+    expect(nextTemplate.rows.some((row) => row.name === 'Medicine')).toBe(false)
     expect((await reopened.entries.where('kind').equals('category').first())?.sheetTitheRate).toBe(7.5)
     await reopened.delete()
     vi.unstubAllGlobals()

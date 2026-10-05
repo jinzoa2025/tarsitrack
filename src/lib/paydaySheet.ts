@@ -13,7 +13,20 @@ export function sheetTemplate(entries: Entry[]) {
   return { entry, rate: entry?.sheetTitheRate ?? 10, rows: entry?.sheetRows ?? defaultRows }
 }
 export function copyRows(rows: SheetRow[]) {
-  return rows.map((row) => ({ ...row, id: crypto.randomUUID() }))
+  return rows.map((row) => ({ id: crypto.randomUUID(), name: row.name, amount: row.amount }))
+}
+
+export function additionalExpense(name: string, amount: number): SheetRow {
+  if (!name.trim() || !Number.isFinite(amount) || amount <= 0) throw new Error('Enter a name and an amount greater than zero.')
+  return { id: crypto.randomUUID(), name: name.trim(), amount: Math.round(amount * 100) / 100, additional: true }
+}
+
+export function monthSummary(sheets: Entry[], month: string) {
+  const included = sheets.filter((sheet) => isSheet(sheet) && !sheet.deletedAt && sheet.date?.slice(0, 7) === month)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+  const drafts = included.filter((sheet) => sheet.sheetIncome === undefined).length
+  const totals = summarizeSheets(included)
+  return { ...totals, remaining: drafts ? undefined : totals.remaining, drafts, sheets: included }
 }
 
 const cents = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100

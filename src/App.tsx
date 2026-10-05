@@ -128,7 +128,7 @@ function Workspace({ user }: { user: User }) {
     } catch (error) { toast(error instanceof Error ? error.message : 'Could not create payday') }
   }
   async function saveSheet(sheet: Entry, values: Partial<Entry>) {
-    try { await saveEntry(db, { ...sheet, ...values, kind: 'payday', name: `${values.date || sheet.date || 'New'} payday` }); toast('Payday saved'); void runSync() }
+    try { await saveEntry(db, { id: sheet.id, ...values, kind: 'payday', name: `${values.date || sheet.date || 'New'} payday` }); void runSync() }
     catch (error) { toast(error instanceof Error ? error.message : 'Could not save payday'); throw error }
   }
   async function saveTemplate(values: Partial<Entry>, existing?: Entry) {

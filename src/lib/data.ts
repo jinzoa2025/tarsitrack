@@ -3,7 +3,7 @@ import Dexie, { type Table } from 'dexie'
 export type Kind = 'payday' | 'transaction' | 'plan' | 'rule' | 'loan' | 'card' | 'bill' | 'wish' | 'goal' | 'category'
 export type TransactionType = 'income' | 'expense' | 'loan_payment' | 'card_payment' | 'goal_deposit' | 'wish_contribution' | 'transfer' | 'adjustment'
 export type RuleMode = 'income_percent' | 'remaining_percent' | 'fixed' | 'manual'
-export interface SheetRow { id: string; name: string; amount: number }
+export interface SheetRow { id: string; name: string; amount: number; additional?: boolean }
 
 export interface Entry {
   id: string
