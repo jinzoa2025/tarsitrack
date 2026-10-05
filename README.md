@@ -1,6 +1,6 @@
-# TarsiTrack
+# Tracker
 
-An offline-first family expense tracker based on the supplied navy and electric blue mobile mockups. Sign-in is required to open the ledger. A new account starts with an empty ledger; **Load sample data** adds optional example records.
+An offline-first family finance app with a simple payday sheet, reusable template, bill calendar and reports. Sign-in is required to open records. A new account starts with no payday sheets; the starting template uses the seven rows from the supplied Excel example.
 
 ## Run it
 
@@ -20,11 +20,14 @@ The production build includes a PWA manifest, icons and a cached app shell. Brow
 
 ## Main flows
 
-- **Home:** loans and cards overview, available budget, wishlist progress and current payday snapshot.
-- **Expenses:** transaction history and planned versus actual category budgets.
-- **Planning:** payday cycles, bills calendar, loans, cards, wishlist, savings and automatic rules.
-- **Reports:** actual income and spending charts, loaded only when opened.
-- **More:** categories, local JSON backup, import, cloud sync and sign-out.
+- **Payday:** create one sheet per date. Enter income and adjust copied template rows; tithes, total rows and remaining money recalculate automatically.
+- **History:** reopen earlier sheets without changing the template or other paydays.
+- **Bills:** see scheduled dates and record payments.
+- **More → Reports:** check payday, monthly and yearly totals from the simple sheets.
+- **More → Template:** set the tithe percentage and default row names and amounts for future sheets.
+- **More → Detailed tools:** the earlier loans, cards, wishlist, savings, transactions, rules and actual-spending reports remain available, alongside backup and sync.
+
+Payday sheet rows are allocations, not paid transactions. The simple reports total those allocations; detailed transaction reports continue to show actual income and spending. The template is stored as a reserved category record so it can use the existing offline and cloud sync format without a database migration. Existing database names and backup format identifiers intentionally retain their old internal values to preserve earlier records.
 
 Payments and contributions are transactions linked to their account or goal. A loan or card payment therefore changes its balance without a second manual edit. Automatic rules reserve budget. If a matching transaction is recorded, the reserve is reduced so the same amount is not deducted twice.
 

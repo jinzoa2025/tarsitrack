@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f6f5f1" />
+  <title>Tracker · Premium payday concept</title>
+  <style>
+    :root{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#1c292b;background:#eeefeb;font-synthesis:none}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 85% 0%,#f9f8f3 0,#eeefeb 42%,#e8ebe7 100%)}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #58a999;outline-offset:3px}
+    a{color:inherit;text-decoration:none}
+    .page{max-width:1320px;margin:0 auto;padding:38px 30px 64px}
+    .intro{display:flex;justify-content:space-between;align-items:end;gap:25px;margin-bottom:30px}
+    .eyebrow{color:#597b74;font-size:11px;letter-spacing:.15em;text-transform:uppercase;font-weight:800}
+    .intro h1{font-size:clamp(32px,4vw,53px);line-height:1.06;letter-spacing:-.065em;margin:8px 0 10px;font-weight:750}
+    .intro p{font-size:14px;line-height:1.55;max-width:650px;color:#60706e;margin:0}
+    .preview-pill{white-space:nowrap;border:1px solid #d2d9d2;border-radius:999px;padding:10px 15px;background:#fff;color:#536460;font-size:12px;font-weight:700;box-shadow:0 5px 18px #263b3110}
+    .page-map{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 28px;padding:0;list-style:none}
+    .page-map a{display:block;background:#fff;border:1px solid #dbe1da;border-radius:999px;padding:9px 14px;font-size:12px;font-weight:700;color:#3e5b54;transition:background .18s,color .18s,transform .18s}
+    .page-map a:hover{background:#183c37;color:#fff;transform:translateY(-2px)}
+    .gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;align-items:start}
+    .screen{min-width:0;scroll-margin-top:18px}
+    .screen-caption{display:flex;align-items:baseline;justify-content:space-between;gap:9px;margin:0 4px 10px}
+    .screen-caption strong{font-size:15px;letter-spacing:-.02em}
+    .screen-caption span{font-size:11px;color:#73817d}
+    .device{width:100%;min-height:785px;background:#fff;border:1px solid #d9ded9;border-radius:31px;box-shadow:0 20px 52px #1b33201c,0 2px 8px #132d2610;display:flex;flex-direction:column;overflow:hidden}
+    .device-top{padding:19px 21px 0;background:#fff}
+    .brand-row{display:flex;align-items:center;gap:9px;margin-bottom:25px}
+    .mark{position:relative;width:27px;height:27px;border-radius:9px;background:#17483e;box-shadow:inset 0 0 0 1px #426f62}
+    .mark:before,.mark:after{content:"";position:absolute;background:#c8e7a8;border-radius:2px;transform:rotate(-28deg)}
+    .mark:before{width:7px;height:14px;left:8px;top:6px}.mark:after{width:7px;height:10px;left:15px;top:8px;background:#83c7a0}
+    .brand-name{font-weight:800;letter-spacing:-.06em;font-size:17px;color:#203e37}
+    .brand-side{margin-left:auto;color:#8a9691;font-size:10px;font-weight:650}
+    .screen-head{display:flex;justify-content:space-between;align-items:end;gap:12px;padding-bottom:17px}
+    .screen-head h2{font-size:27px;line-height:1.04;letter-spacing:-.055em;margin:0 0 5px;font-weight:760}
+    .screen-head p{margin:0;color:#74827d;font-size:12px;line-height:1.4}
+    .icon-action{border:1px solid #d6e1d8;background:#f4f8f3;color:#205b4e;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:750;white-space:nowrap}
+    .screen-body{padding:0 20px 20px;flex:1;background:#f9faf7}
+    .screen-body.white{background:#fff}
+    .bottom-nav{border-top:1px solid #e5e9e3;background:#fff;display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px max(11px,env(safe-area-inset-bottom));gap:2px}
+    .bottom-nav a{display:grid;place-items:center;gap:2px;padding:4px 0;color:#86938e;font-size:10px;font-weight:700;border-radius:9px}
+    .bottom-nav a svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .bottom-nav a.active{color:#1a6554;background:#eaf4ed}
+    .date-control{display:flex;justify-content:space-between;align-items:center;padding:13px 0 12px;gap:8px}
+    .date-control label,.small-label{font-size:11px;color:#78857f;font-weight:750}
+    .date-control select,.draft-date input{max-width:170px;border:1px solid #d7e0d9;border-radius:9px;background:#fff;color:#263e36;padding:8px 9px;font-size:16px;font-weight:650}
+    .draft-date{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;color:#697973;font-size:12px;font-weight:700}
+    .draft-date[hidden]{display:none}
+    .summary{background:#fff;border:1px solid #e0e6df;border-radius:17px;overflow:hidden;box-shadow:0 3px 13px #162f2110}
+    .summary-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px;border-bottom:1px solid #edf0ea;font-size:12px;color:#5a6b64}
+    .summary-row strong{font-size:14px;color:#1e312b;font-variant-numeric:tabular-nums}
+    .summary-row input{width:126px;text-align:right;color:#213b33;border:1px solid #d4dfd5;border-radius:8px;background:#f8fbf8;padding:8px;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+    .summary-row .rate{color:#338066;font-size:11px;font-weight:700}
+    .summary-row.money{background:#f5f8f3;border-bottom:0}
+    .remaining-card{margin-top:12px;background:linear-gradient(120deg,#173c36,#26564a);color:#fff;border-radius:17px;padding:18px 17px;box-shadow:0 9px 20px #17483e30;position:relative;overflow:hidden}
+    .remaining-card:after{content:"";position:absolute;width:145px;height:145px;border:1px solid #ffffff24;border-radius:50%;right:-40px;top:-60px;box-shadow:0 0 0 22px #ffffff08,0 0 0 45px #ffffff06}
+    .remaining-card span{display:block;color:#bbd9ca;font-size:11px;font-weight:700;position:relative;z-index:1}
+    .remaining-card strong{display:block;margin-top:5px;font-size:30px;line-height:1;letter-spacing:-.055em;font-weight:760;font-variant-numeric:tabular-nums;position:relative;z-index:1}
+    .remaining-card small{display:block;margin-top:8px;font-size:10px;color:#d2e8d8;position:relative;z-index:1}
+    .remaining-card strong.pending{font-size:18px;letter-spacing:0}
+    .section-line{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:21px 1px 9px}
+    .section-line h3{font-size:14px;letter-spacing:-.02em;margin:0}
+    .section-line small{font-size:10px;color:#86938e}
+    .expense-list{background:#fff;border:1px solid #e2e7e0;border-radius:14px;overflow:hidden}
+    .expense-row{display:flex;align-items:center;gap:8px;padding:7px 11px;min-height:45px;border-bottom:1px solid #eff1ed}
+    .expense-row:last-child{border-bottom:0}
+    .expense-row span{font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3d4f48}
+    .expense-row input{width:115px;text-align:right;border:1px solid #dbe4dc;background:#fdfefd;border-radius:7px;padding:6px 7px;font-size:16px;font-variant-numeric:tabular-nums;color:#203a30}
+    .total-row{display:flex;justify-content:space-between;align-items:center;padding:15px 1px;font-size:12px;font-weight:750;color:#536860}
+    .total-row strong{color:#1d342b;font-size:17px;font-variant-numeric:tabular-nums}
+    .helper{color:#86938a;font-size:11px;line-height:1.45;margin:0}
+    .page-pad{padding-top:17px}
+    .feature-card{background:#fff;border:1px solid #e0e7df;border-radius:17px;padding:16px;box-shadow:0 3px 13px #162f2110;margin-bottom:12px}
+    .feature-card.deep{background:#183f37;color:#fff;border-color:#183f37}
+    .feature-card .label{font-size:11px;color:#809087;font-weight:700}
+    .feature-card.deep .label{color:#b6d5bf}
+    .feature-card .large{font-size:29px;letter-spacing:-.06em;font-weight:760;margin:6px 0 3px;font-variant-numeric:tabular-nums}
+    .feature-card p{color:#7b8a83;font-size:11px;line-height:1.4;margin:4px 0 0}
+    .feature-card.deep p{color:#c1d9c6}
+    .month-heading{font-size:11px;color:#809087;font-weight:750;margin:21px 2px 10px}
+    .history-card{background:#fff;border:1px solid #e0e7df;border-radius:15px;padding:14px;margin-bottom:10px;box-shadow:0 2px 10px #2139280b}
+    .history-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .history-top strong{font-size:14px;letter-spacing:-.02em}
+    .history-top em{font-size:10px;color:#318269;background:#eaf5ed;border-radius:999px;padding:5px 8px;font-style:normal;font-weight:750}
+    .history-money{font-size:25px;letter-spacing:-.055em;font-weight:760;margin:10px 0 4px;color:#194d3f;font-variant-numeric:tabular-nums}
+    .history-meta{display:flex;justify-content:space-between;gap:6px;color:#75837c;font-size:11px;margin:0 0 13px}
+    .text-link{border:0;background:none;padding:0;color:#21715b;font-size:11px;font-weight:800}
+    .list-note{border:1px solid #dce5dc;background:#f1f6ee;border-radius:12px;padding:12px 13px;font-size:11px;line-height:1.45;color:#4e6a5b;margin-top:13px}
+    .calendar-card{background:#fff;border:1px solid #e1e7df;border-radius:16px;padding:15px 13px;margin:16px 0 17px;box-shadow:0 3px 13px #162f2110}
+    .calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:13px;font-weight:800}
+    .calendar-head span{font-size:10px;color:#4d8669;background:#e9f4ea;border-radius:99px;padding:5px 8px}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:5px 2px}
+    .calendar-grid b{font-size:9px;color:#9ba7a0;font-weight:750;padding:5px 0}
+    .calendar-grid i{font-size:11px;font-style:normal;color:#53675b;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;margin:auto;position:relative}
+    .calendar-grid i.muted{color:#bdc5be}.calendar-grid i.due{background:#e9f4eb;color:#246e55;font-weight:850}.calendar-grid i.today{background:#214e42;color:#fff;font-weight:850}
+    .bill-row{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #e2e8e0;border-radius:13px;padding:11px 12px;margin-bottom:8px}
+    .bill-date{width:39px;height:39px;border-radius:10px;background:#ecf3eb;display:grid;place-items:center;flex:none;color:#2b735a;font-weight:850;font-size:14px}
+    .bill-info{flex:1;min-width:0}.bill-info strong{font-size:12px;display:block}.bill-info span{font-size:10px;color:#84918a}
+    .bill-money{text-align:right;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+    .bill-money button{display:block;margin:5px 0 0 auto;background:none;border:0;padding:0;color:#278168;font-size:10px;font-weight:750}
+    .bill-row.paid{opacity:.56}.bill-row.paid .bill-money button{color:#687b6c}
+    .report-hint{font-size:11px;color:#7d8d82;line-height:1.45;margin:0 0 15px}
+    .report-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:#e9eee8;border-radius:11px;padding:4px;margin:0 0 12px}
+    .report-modes button{border:0;border-radius:8px;background:transparent;color:#6c8175;padding:9px 3px;font-size:11px;font-weight:750}
+    .report-modes button.active{background:#fff;color:#1d6048;box-shadow:0 2px 6px #1f3c2818}
+    .period-select{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 11px;font-size:11px;font-weight:750;color:#687b70}
+    .period-select select{max-width:190px;border:1px solid #d8e2d9;border-radius:9px;background:#fff;color:#254236;padding:8px 9px;font-size:16px;font-weight:650}
+    .report-remaining{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #e9eee7;margin-top:12px;padding-top:12px;font-size:11px;color:#688073;font-weight:700}
+    .report-remaining strong{font-size:17px;color:#1d6349;font-variant-numeric:tabular-nums}
+    .metric-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}
+    .metric{border:1px solid #e0e7de;border-radius:13px;background:#fff;padding:12px}
+    .metric span{display:block;color:#829087;font-size:10px;margin-bottom:6px}.metric strong{font-size:16px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+    .breakdown-row{margin-bottom:17px}.breakdown-row .top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:7px}.breakdown-row .top strong{font-variant-numeric:tabular-nums}
+    .bar{height:7px;border-radius:10px;background:#e9eee7;overflow:hidden}.bar i{display:block;height:100%;border-radius:10px;background:#41826b}
+    .breakdown-row:nth-child(2) .bar i{background:#85b79a}.breakdown-row:nth-child(3) .bar i{background:#b8ad83}.breakdown-row:nth-child(4) .bar i{background:#cbd7c8}
+    .menu-group{font-size:10px;letter-spacing:.1em;color:#84918a;text-transform:uppercase;font-weight:800;margin:22px 2px 9px}
+    .menu-row{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e3e9e1;border-bottom:0;padding:13px 14px;font-size:12px;color:#2d4439}
+    .menu-row:first-of-type{border-radius:13px 13px 0 0}.menu-row:last-of-type{border-bottom:1px solid #e3e9e1;border-radius:0 0 13px 13px}
+    .menu-glyph{width:29px;height:29px;display:grid;place-items:center;border-radius:9px;background:#eaf4e8;color:#306d52;font-size:15px;font-weight:800}
+    .menu-row span:nth-child(2){flex:1}.menu-row small{color:#8d9a91;font-size:11px}
+    .more-banner{background:#1f4d3f;color:#fff;padding:17px;border-radius:16px;margin-top:17px;position:relative;overflow:hidden}
+    .more-banner:after{content:"";position:absolute;width:150px;height:150px;border:1px solid #ffffff22;border-radius:50%;right:-48px;bottom:-100px;box-shadow:0 0 0 22px #ffffff08,0 0 0 44px #ffffff06}
+    .more-banner strong{display:block;font-size:16px;letter-spacing:-.03em}.more-banner p{font-size:11px;line-height:1.45;color:#d2e5d2;max-width:215px;margin:5px 0 0}
+    .template-note{font-size:12px;line-height:1.48;color:#74847a;margin:17px 0 13px}
+    .setting-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px;background:#fff;border:1px solid #e0e7df;border-radius:13px}
+    .setting-row strong{font-size:12px}.setting-row small{display:block;color:#89978d;font-size:10px;margin-top:4px}
+    .setting-row input{width:63px;border:1px solid #d1dfd3;border-radius:8px;background:#f9fbf8;text-align:right;padding:8px;color:#1f4838;font-size:16px}
+    .template-rows{display:grid;gap:8px}
+    .template-row{display:grid;grid-template-columns:minmax(0,1fr) 98px 24px;gap:6px}
+    .template-row input{min-width:0;border:1px solid #dce6dc;background:#fff;border-radius:8px;color:#233a2d;padding:9px 8px;font-size:16px}
+    .template-row input:last-of-type{text-align:right;font-variant-numeric:tabular-nums}
+    .remove{border:0;background:none;color:#8e9f92;font-size:19px;padding:0}
+    .add-row{width:100%;border:1px dashed #a9c9ae;border-radius:9px;background:#f2f8ef;color:#2b7656;padding:11px;font-size:12px;font-weight:750;margin-top:10px}
+    .primary-button{width:100%;border:0;border-radius:10px;background:#1d654e;color:#fff;font-size:12px;font-weight:800;padding:13px;margin-top:18px;box-shadow:0 6px 14px #1b624526}
+    .template-explain{color:#819187;font-size:11px;line-height:1.45;margin:13px 0 0}
+    @media(max-width:1100px){.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.page{max-width:890px}}
+    @media(max-width:690px){.page{padding:22px 14px 42px}.intro{display:block;margin-bottom:17px}.intro h1{font-size:35px}.preview-pill{display:inline-block;margin-top:15px}.gallery{grid-template-columns:minmax(0,420px);justify-content:center;gap:25px}.page-map{overflow-x:auto;flex-wrap:nowrap;padding-bottom:5px;scrollbar-width:none}.page-map::-webkit-scrollbar{display:none}.page-map a{white-space:nowrap}}
+    @media(max-width:410px){.page{padding-left:10px;padding-right:10px}.device{border-radius:24px}.device-top{padding-left:17px;padding-right:17px}.screen-body{padding-left:16px;padding-right:16px}.remaining-card strong{font-size:28px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.page-map a{transition:none}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="intro"><div><div class="eyebrow">New direction for your family finance app</div><h1>Tracker, made simpler.</h1><p>Warm white pages keep everyday numbers easy to read. Deep green marks what matters. This preview shows the full path after the payday sheet, with your two Excel examples.</p></div><span class="preview-pill">Design preview · nothing is saved</span></header>
+    <nav class="page-map" aria-label="Jump to a mock page"><a href="#payday">Payday</a><a href="#history">History</a><a href="#bills">Bills</a><a href="#reports">Reports</a><a href="#more">More</a><a href="#template">Template</a></nav>
+    <div class="gallery">
+      <section class="screen" id="payday" aria-label="Payday screen mock"><div class="screen-caption"><strong>Payday</strong><span>The everyday screen</span></div><div class="device"><header class="device-top"><div class="brand-row"><span class="mark" aria-hidden="true"></span><span class="brand-name">Tracker</span><span class="brand-side">Family account</span></div><div class="screen-head"><div><h2>Payday sheet</h2><p>Everything for one payday, in one place.</p></div><button class="icon-action" id="new-payday">+ New</button></div></header><div class="screen-body"><div class="date-control"><label for="cycle-select">Payday date</label><select id="cycle-select" aria-label="Choose payday"></select></div><label class="draft-date" id="draft-date-wrap" hidden>Date for new payday<input id="draft-date" type="date" /></label><div class="summary"><div class="summary-row"><label for="income">Income</label><input id="income" inputmode="decimal" aria-label="Income amount" /></div><div class="summary-row"><span>Tithes <span class="rate" id="sheet-rate">10%</span></span><strong id="tithes">₱3,600.00</strong></div><div class="summary-row money"><span>Money after tithes</span><strong id="money">₱32,400.00</strong></div></div><div class="remaining-card"><span>Remaining money</span><strong id="remaining">₱6,900.00</strong><small>Income minus tithes and your rows below</small></div><div class="section-line"><h3>Payday rows</h3><small>Tap an amount to edit</small></div><div class="expense-list" id="expense-list"></div><div class="total-row"><span>Total rows</span><strong id="expense-total">₱25,500.00</strong></div><p class="helper">Amounts recalculate as you type.</p></div><nav class="bottom-nav"></nav></div></section>
+      <section class="screen" id="history" aria-label="Payday history screen mock"><div class="screen-caption"><strong>History</strong><span>Find an earlier payday</span></div><div class="device"><header class="device-top"><div class="brand-row"><span class="mark" aria-hidden="true"></span><span class="brand-name">Tracker</span><span class="brand-side">Family account</span></div><div class="screen-head"><div><h2>Payday history</h2><p>Each sheet stays separate and easy to find.</p></div></div></header><div class="screen-body page-pad"><div class="feature-card deep"><span class="label">Remaining across these examples</span><div class="large" id="history-combined">₱68,305.31</div><p>Two payday sheets in this design preview</p></div><div id="history-list"></div><div class="list-note">New paydays copy your template. Editing one payday does not rewrite an earlier sheet.</div></div><nav class="bottom-nav"></nav></div></section>
+      <section class="screen" id="bills" aria-label="Bills screen mock"><div class="screen-caption"><strong>Bills</strong><span>Dates and reminders</span></div><div class="device"><header class="device-top"><div class="brand-row"><span class="mark" aria-hidden="true"></span><span class="brand-name">Tracker</span><span class="brand-side">Family account</span></div><div class="screen-head"><div><h2>Bills</h2><p>See what is due without opening a sheet.</p></div></div></header><div class="screen-body"><div class="calendar-card"><div class="calendar-head">October 2026 <span>4 due dates</span></div><div class="calendar-grid" id="calendar-grid"></div></div><div class="section-line"><h3>Coming up</h3><small>Tap to mark paid</small></div><div id="bill-list"></div><p class="helper">A reminder stays separate from the payday calculation until you decide how bills should count.</p></div><nav class="bottom-nav"></nav></div></section>
+      <section class="screen" id="reports" aria-label="Reports screen mock"><div class="screen-caption"><strong>Reports</strong><span>Payday, month, or year</span></div><div class="device"><header class="device-top"><div class="brand-row"><span class="mark" aria-hidden="true"></span><span class="brand-name">Tracker</span><span class="brand-side">Family account</span></div><div class="screen-head"><div><h2>Breakdown</h2><p>Choose the time period you want to see.</p></div></div></header><div class="screen-body page-pad"><div class="report-modes" role="group" aria-label="Report period"><button type="button" data-report-mode="payday">Payday</button><button type="button" data-report-mode="month">Monthly</button><button type="button" data-report-mode="year">Yearly</button></div><label class="period-select" for="report-choice"><span id="report-choice-label">Choose month</span><select id="report-choice" aria-label="Choose report period"></select></label><p class="report-hint" id="report-period">October 2026 · 1 payday</p><div class="metric-strip"><div class="metric"><span>Income</span><strong id="report-income">₱100,000</strong></div><div class="metric"><span>Tithes</span><strong id="report-tithes">₱10,000</strong></div></div><div class="feature-card"><span class="label">Total payday rows</span><div class="large" id="report-total">₱28,594.69</div><p>Totals from the selected period.</p><div class="report-remaining"><span>Remaining money</span><strong id="report-remaining">₱61,405.31</strong></div></div><div class="section-line"><h3>By row</h3><small>Share of total</small></div><div class="feature-card" id="breakdown-list"></div><p class="helper">This view totals the selected sheets. It does not label planned amounts as paid expenses.</p></div><nav class="bottom-nav"></nav></div></section>
+      <section class="screen" id="more" aria-label="More screen mock"><div class="screen-caption"><strong>More</strong><span>Settings and detailed tools</span></div><div class="device"><header class="device-top"><div class="brand-row"><span class="mark" aria-hidden="true"></span><span class="brand-name">Tracker</span><span class="brand-side">Family account</span></div><div class="screen-head"><div><h2>More</h2><p>Useful tools, kept out of the daily path.</p></div></div></header><div class="screen-body page-pad"><div class="more-banner"><strong>Only what you need, when you need it.</strong><p>Your payday sheet remains the first screen. Detailed features live here.</p></div><div class="menu-group">Payday setup</div><a class="menu-row" href="#template"><span class="menu-glyph">≡</span><span>Payday template</span><small>›</small></a><a class="menu-row" href="#reports"><span class="menu-glyph">▥</span><span>Reports</span><small>›</small></a><div class="menu-group">Existing tools</div><div class="menu-row"><span class="menu-glyph">○</span><span>Loans &amp; cards</span><small>›</small></div><div class="menu-row"><span class="menu-glyph">◇</span><span>Wishlist &amp; savings</span><small>›</small></div><div class="menu-row"><span class="menu-glyph">↻</span><span>Auto rules</span><small>›</small></div><div class="menu-group">Your account</div><div class="menu-row"><span class="menu-glyph">✓</span><span>Sync &amp; backup</span><small>›</small></div></div><nav class="bottom-nav"></nav></div></section>
+      <section class="screen" id="template" aria-label="Payday template screen mock"><div class="screen-caption"><strong>Template</strong><span>Set up future paydays</span></div><div class="device"><header class="device-top"><div class="brand-row"><span class="mark" aria-hidden="true"></span><span class="brand-name">Tracker</span><span class="brand-side">Family account</span></div><div class="screen-head"><div><h2>Your template</h2><p>Defaults for a new payday sheet.</p></div></div></header><div class="screen-body"><p class="template-note">Start with the rows from your Excel file. Change a name or amount here, then preview a new payday.</p><label class="setting-row"><span><strong>Tithes percentage</strong><small>Calculated from income</small></span><span><input id="template-rate" type="number" min="0" max="100" step="0.1" value="10" aria-label="Tithes percentage" />%</span></label><div class="section-line"><h3>Default rows</h3><small>Copied into new sheets</small></div><div class="template-rows" id="template-rows"></div><button class="add-row" id="add-row">+ Add another row</button><p class="template-explain">Template edits affect the next sheet. Earlier paydays keep their own numbers.</p><button class="primary-button" id="preview-template">Preview a new payday</button></div><nav class="bottom-nav"></nav></div></section>
+    </div>
+  </main>
+  <script>
+    const initialRows=[['Metrobank (N)',12000],['Paluwagan',2000],['Shopee',1000],['Market',6000],['Miscellaneous',2000],['Electricity',1000],['Gas',1500]];
+    const template=initialRows.map(([name,amount])=>({name,amount}));
+    const cycles=[{label:'Aug 5, 2026',date:'2026-08-05',income:36000,rate:10,rows:initialRows.map(([name,amount])=>({name,amount}))},{label:'Oct 5, 2026',date:'2026-10-05',income:100000,rate:10,rows:[13361.93,2000,1232.76,6000,2000,2500,1500].map((amount,i)=>({name:initialRows[i][0],amount}))}];
+    const bills=[{date:7,name:'Electricity',amount:2500,paid:false},{date:10,name:'Gas',amount:1500,paid:false},{date:15,name:'Metrobank (N)',amount:13361.93,paid:false},{date:20,name:'Paluwagan',amount:2000,paid:false}];
+    const navItems=[
+      ['payday','Payday','<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'],
+      ['history','History','<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
+      ['bills','Bills','<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h3M8 17h3"/>'],
+      ['more','More','<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>']
+    ];
+    let selected=0;
+    let reportMode='month';
+    let reportPaydayIndex=1;
+    let reportMonth='2026-10';
+    let reportYear='2026';
+    const el=id=>document.getElementById(id);
+    const money=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const compactMoney=n=>'₱'+Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:0});
+    const formatted=n=>Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const number=value=>Math.max(0,Number(String(value).replace(/,/g,''))||0);
+    const titheFor=cycle=>Math.round(cycle.income*cycle.rate)/100;
+    const totalFor=cycle=>cycle.rows.reduce((sum,row)=>sum+number(row.amount),0);
+    const remainingFor=cycle=>cycle.income-titheFor(cycle)-totalFor(cycle);
+    function renderNav(){document.querySelectorAll('.screen').forEach(screen=>{const current=screen.id==='template'||screen.id==='reports'?'more':screen.id;screen.querySelector('.bottom-nav').innerHTML=navItems.map(([id,label,icon])=>`<a href="#${id}" class="${current===id?'active':''}"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span>${label}</span></a>`).join('')})}
+    function renderSheet(){const cycle=cycles[selected];const select=el('cycle-select');select.replaceChildren(...cycles.map((item,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=item.label;return option}));select.value=String(selected);el('draft-date-wrap').hidden=!cycle.draft;el('draft-date').value=cycle.date||'';el('income').value=cycle.draft&&!cycle.income?'':formatted(cycle.income);el('expense-list').replaceChildren(...cycle.rows.map(row=>{const wrap=document.createElement('label');wrap.className='expense-row';const name=document.createElement('span');name.textContent=row.name;const input=document.createElement('input');input.inputMode='decimal';input.value=formatted(row.amount);input.setAttribute('aria-label',row.name+' amount');input.addEventListener('input',()=>{row.amount=number(input.value);updateTotals()});input.addEventListener('blur',()=>{input.value=formatted(row.amount)});wrap.append(name,input);return wrap}));updateTotals()}
+    function updateTotals(){const cycle=cycles[selected];const hasIncome=el('income').value.trim()!=='';cycle.income=number(el('income').value);el('sheet-rate').textContent=cycle.rate+'%';el('tithes').textContent=hasIncome?money(titheFor(cycle)):'—';el('money').textContent=hasIncome?money(cycle.income-titheFor(cycle)):'—';el('expense-total').textContent=money(totalFor(cycle));el('remaining').textContent=hasIncome?money(remainingFor(cycle)):'Enter income';el('remaining').classList.toggle('pending',!hasIncome);renderHistory();renderReport()}
+    function renderHistory(){const combined=cycles.filter(cycle=>cycle.income).reduce((sum,cycle)=>sum+remainingFor(cycle),0);el('history-combined').textContent=money(combined);const list=el('history-list');list.replaceChildren(...[...cycles].map((cycle,index)=>({cycle,index})).reverse().map(({cycle,index})=>{const card=document.createElement('article');card.className='history-card';const top=document.createElement('div');top.className='history-top';const name=document.createElement('strong');name.textContent=cycle.label;const tag=document.createElement('em');tag.textContent=cycle.draft?'Draft':'Sheet';top.append(name,tag);const remaining=document.createElement('div');remaining.className='history-money';remaining.textContent=cycle.income?money(remainingFor(cycle)):'Enter income';const meta=document.createElement('div');meta.className='history-meta';meta.innerHTML='<span>Income '+(cycle.income?money(cycle.income):'—')+'</span><span>'+cycle.rows.length+' rows</span>';const open=document.createElement('button');open.className='text-link';open.textContent='Open payday sheet';open.addEventListener('click',()=>{selected=index;renderSheet();location.hash='payday'});card.append(top,remaining,meta,open);return card}))}
+    function renderCalendar(){const grid=el('calendar-grid');const labels=['S','M','T','W','T','F','S'];grid.replaceChildren(...labels.map(label=>{const b=document.createElement('b');b.textContent=label;return b}));const start=new Date(2026,9,1).getDay();for(let i=0;i<start;i++){const gap=document.createElement('i');gap.textContent='';grid.append(gap)}for(let day=1;day<=31;day++){const cell=document.createElement('i');cell.textContent=String(day);if(bills.some(bill=>bill.date===day))cell.className='due';if(day===15)cell.className='today';grid.append(cell)}}
+    function renderBills(){el('bill-list').replaceChildren(...bills.map(bill=>{const row=document.createElement('div');row.className='bill-row'+(bill.paid?' paid':'');const date=document.createElement('div');date.className='bill-date';date.textContent=String(bill.date);const info=document.createElement('div');info.className='bill-info';const name=document.createElement('strong');name.textContent=bill.name;const due=document.createElement('span');due.textContent='Oct '+bill.date+', 2026';info.append(name,due);const amount=document.createElement('div');amount.className='bill-money';amount.append(document.createTextNode(money(bill.amount)));const toggle=document.createElement('button');toggle.textContent=bill.paid?'Paid ✓':'Mark paid';toggle.setAttribute('aria-label',(bill.paid?'Mark unpaid ':'Mark paid ')+bill.name);toggle.addEventListener('click',()=>{bill.paid=!bill.paid;renderBills()});amount.append(toggle);row.append(date,info,amount);return row}))}
+    function renderReport(){
+      const choice=el('report-choice');
+      const months=[...new Set(cycles.filter(cycle=>cycle.date).map(cycle=>cycle.date.slice(0,7)))].sort().reverse();
+      const years=[...new Set(cycles.filter(cycle=>cycle.date).map(cycle=>cycle.date.slice(0,4)))].sort().reverse();
+      let options=[];
+      let value='';
+      let label='';
+      if(reportMode==='payday'){
+        options=cycles.map((cycle,index)=>({value:String(index),label:cycle.label}));
+        value=String(reportPaydayIndex);
+        label='Choose payday';
+      }else if(reportMode==='month'){
+        if(!months.includes(reportMonth))reportMonth=months[0]||'';
+        options=months.map(month=>({value:month,label:new Date(Number(month.slice(0,4)),Number(month.slice(5))-1,1).toLocaleDateString('en-PH',{month:'long',year:'numeric'})}));
+        value=reportMonth;
+        label='Choose month';
+      }else{
+        if(!years.includes(reportYear))reportYear=years[0]||'';
+        options=years.map(year=>({value:year,label:year}));
+        value=reportYear;
+        label='Choose year';
+      }
+      choice.replaceChildren(...options.map(item=>{const option=document.createElement('option');option.value=item.value;option.textContent=item.label;return option}));
+      choice.value=value;
+      el('report-choice-label').textContent=label;
+      document.querySelectorAll('[data-report-mode]').forEach(button=>{const active=button.dataset.reportMode===reportMode;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
+      const selectedCycles=reportMode==='payday'?[cycles[reportPaydayIndex]].filter(Boolean):cycles.filter(cycle=>cycle.date&&(reportMode==='month'?cycle.date.startsWith(reportMonth):cycle.date.startsWith(reportYear)));
+      const income=selectedCycles.reduce((sum,cycle)=>sum+cycle.income,0);
+      const tithes=selectedCycles.reduce((sum,cycle)=>sum+titheFor(cycle),0);
+      const total=selectedCycles.reduce((sum,cycle)=>sum+totalFor(cycle),0);
+      const period=options.find(item=>item.value===value)?.label||'No period';
+      el('report-period').textContent=period+' · '+selectedCycles.length+' payday'+(selectedCycles.length===1?'':'s');
+      el('report-income').textContent=compactMoney(income);
+      el('report-tithes').textContent=compactMoney(tithes);
+      el('report-total').textContent=money(total);
+      el('report-remaining').textContent=money(income-tithes-total);
+      const grouped=new Map();
+      selectedCycles.forEach(cycle=>cycle.rows.forEach(row=>grouped.set(row.name,(grouped.get(row.name)||0)+number(row.amount))));
+      const top=[...grouped].map(([name,amount])=>({name,amount})).sort((a,b)=>b.amount-a.amount).slice(0,4);
+      el('breakdown-list').replaceChildren(...top.map(row=>{const item=document.createElement('div');item.className='breakdown-row';const topLine=document.createElement('div');topLine.className='top';const name=document.createElement('span');name.textContent=row.name;const amount=document.createElement('strong');amount.textContent=money(row.amount);topLine.append(name,amount);const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('i');fill.style.width=(total?Math.max(2,100*row.amount/total):0)+'%';bar.append(fill);item.append(topLine,bar);return item}));
+    }
+    function renderTemplate(){el('template-rows').replaceChildren(...template.map((row,index)=>{const wrap=document.createElement('div');wrap.className='template-row';const name=document.createElement('input');name.value=row.name;name.setAttribute('aria-label','Template row '+(index+1)+' name');name.addEventListener('input',()=>{row.name=name.value});const amount=document.createElement('input');amount.inputMode='decimal';amount.value=formatted(row.amount);amount.setAttribute('aria-label',row.name+' default amount');amount.addEventListener('input',()=>{row.amount=number(amount.value)});amount.addEventListener('blur',()=>{amount.value=formatted(row.amount)});const remove=document.createElement('button');remove.className='remove';remove.textContent='×';remove.setAttribute('aria-label','Remove '+row.name);remove.addEventListener('click',()=>{template.splice(index,1);renderTemplate()});wrap.append(name,amount,remove);return wrap}))}
+    function newPayday(){const rate=Math.min(100,Math.max(0,Number(el('template-rate').value)||0));const rows=template.filter(row=>row.name.trim()).map(row=>({name:row.name.trim(),amount:number(row.amount)}));cycles.push({label:'New payday',date:'',income:0,rate,rows,draft:true});selected=cycles.length-1;renderSheet();location.hash='payday';el('draft-date').focus()}
+    el('income').addEventListener('input',updateTotals);el('income').addEventListener('blur',()=>{if(el('income').value.trim())el('income').value=formatted(cycles[selected].income)});
+    el('cycle-select').addEventListener('change',event=>{selected=Number(event.target.value);renderSheet()});
+    document.querySelectorAll('[data-report-mode]').forEach(button=>button.addEventListener('click',()=>{reportMode=button.dataset.reportMode;renderReport()}));
+    el('report-choice').addEventListener('change',event=>{if(reportMode==='payday')reportPaydayIndex=Number(event.target.value);else if(reportMode==='month')reportMonth=event.target.value;else reportYear=event.target.value;renderReport()});
+    el('draft-date').addEventListener('change',event=>{const cycle=cycles[selected];cycle.date=event.target.value;cycle.label=cycle.date?new Date(cycle.date+'T12:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'New payday';renderSheet()});
+    el('new-payday').addEventListener('click',newPayday);el('preview-template').addEventListener('click',newPayday);
+    el('add-row').addEventListener('click',()=>{template.push({name:'New row',amount:0});renderTemplate()});
+    renderNav();renderCalendar();renderBills();renderSheet();renderTemplate();
+  </script>
+</body>
+</html>

@@ -6,19 +6,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [react(), VitePWA({
     registerType: 'autoUpdate',
-    includeAssets: ['icon-192.png', 'icon-512.png'],
+    includeAssets: ['tracker-icon-192.png', 'tracker-icon-512.png'],
     manifest: {
-      name: 'TarsiTrack · Family Expense Tracker',
-      short_name: 'TarsiTrack',
-      description: 'Offline-first payday budgeting and family finance.',
-      theme_color: '#06172b',
-      background_color: '#06172b',
+      name: 'Tracker · Family Finance',
+      short_name: 'Tracker',
+      description: 'Simple payday sheets and family finance.',
+      theme_color: '#f6f7f3',
+      background_color: '#f6f7f3',
       display: 'standalone',
       start_url: '/',
       scope: '/',
       icons: [
-        { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-        { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+        { src: '/tracker-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: '/tracker-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
       ],
     },
     workbox: {
