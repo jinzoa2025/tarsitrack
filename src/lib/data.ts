@@ -4,6 +4,14 @@ export type Kind = 'payday' | 'transaction' | 'plan' | 'rule' | 'loan' | 'card' 
 export type TransactionType = 'income' | 'expense' | 'loan_payment' | 'card_payment' | 'goal_deposit' | 'wish_contribution' | 'transfer' | 'adjustment'
 export type RuleMode = 'income_percent' | 'remaining_percent' | 'fixed' | 'manual'
 export interface SheetRow { id: string; name: string; amount: number; additional?: boolean }
+export interface ElectricBillInput {
+  month: string
+  totalBill: number
+  mainPrevious: number
+  mainLatest: number
+  subPrevious: number
+  subLatest: number
+}
 
 export interface Entry {
   id: string
@@ -33,6 +41,7 @@ export interface Entry {
   sheetTitheRate?: number
   sheetRows?: SheetRow[]
   sheetTemplate?: boolean
+  electricBill?: ElectricBillInput
   notes?: string
   createdAt?: string
   updatedAt: string

@@ -2,18 +2,20 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { User } from '@supabase/supabase-js'
 import { ArrowRight, ArrowsClockwise, Bank, CalendarDots, ChartBar, Check, ClockCounterClockwise, CloudArrowUp, DotsThree, DownloadSimple, GearSix, List, LockKey, Receipt, ShieldCheck, ShoppingBag, Target, UploadSimple } from '@phosphor-icons/react'
-import { active, accountDb, guestDb, isoDate, loadDemo, removeEntry, saveEntry, type Entry, type Kind, type TrackerDB } from './lib/data'
+import { active, accountDb, guestDb, isoDate, loadDemo, removeEntry, saveEntry, type ElectricBillInput, type Entry, type Kind, type TrackerDB } from './lib/data'
 import { copyRows, isSheet, isTemplate, sheetTemplate, templateName } from './lib/paydaySheet'
+import { calculateElectricBill, electricBillName, isElectricBillEntry } from './lib/electricBill'
 import type { ScheduleItem } from './lib/schedule'
 import { supabase, synchronize } from './lib/sync'
 import { EntryForm, type FormConfig } from './EntryForm'
 import { ActivityView, HomeView, PlanningView, type PlanningTab } from './Views'
 import { BillsPage, HistoryPage, PaydayPage, ReportsPage, TemplatePage, TrackerMark } from './SimpleTracker'
+import ElectricBillPage from './ElectricBillPage'
 import { Row, SectionHead } from './ui'
 import './App.css'
 import './TrackerSimple.css'
 
-type Page = 'home' | 'history' | 'bills' | 'reports' | 'template' | 'more' | 'activity' | 'planning' | 'legacyHome' | 'legacyReports'
+type Page = 'home' | 'history' | 'bills' | 'electric' | 'reports' | 'template' | 'more' | 'activity' | 'planning' | 'legacyHome' | 'legacyReports'
 const DetailedReports = lazy(() => import('./ReportsView'))
 const nav = [
   { id: 'home' as Page, label: 'Payday', icon: Receipt },
@@ -135,6 +137,13 @@ function Workspace({ user }: { user: User }) {
     try { const template = existing || (await db.entries.where('kind').equals('category').filter(isTemplate).first()); await saveEntry(db, { ...template, ...values, kind: 'category', name: templateName, sheetTemplate: true }); toast('Template saved'); void runSync() }
     catch (error) { toast(error instanceof Error ? error.message : 'Could not save template'); throw error }
   }
+  async function saveElectricBill(input: ElectricBillInput, existing?: Entry) {
+    const result = calculateElectricBill(input)
+    if ('error' in result) throw new Error(result.error)
+    const record = existing || all.find((item) => isElectricBillEntry(item) && item.electricBill.month === input.month)
+    await saveEntry(db, { ...record, kind: 'category', name: electricBillName, electricBill: input, amount: result.ourBill })
+    toast('Electric bill month saved'); void runSync()
+  }
   function recordScheduled(item: ScheduleItem) {
     const { entry, amount } = item
     open('transaction', undefined, { name: entry.kind === 'bill' ? entry.name : `${entry.name} payment`, amount, date: isoDate(), category: entry.kind === 'loan' ? 'Loans' : entry.kind === 'card' ? 'Cards' : entry.category, transactionType: entry.kind === 'loan' ? 'loan_payment' : entry.kind === 'card' ? 'card_payment' : 'expense', accountId: entry.id, paydayId: cycle?.id })
@@ -171,16 +180,17 @@ function Workspace({ user }: { user: User }) {
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  const title = page === 'home' ? 'Payday' : page === 'history' ? 'History' : page === 'bills' ? 'Bills' : page === 'reports' || page === 'legacyReports' ? 'Reports' : page === 'template' ? 'Template' : page === 'activity' ? 'Detailed expenses' : page === 'legacyHome' ? 'Loans & cards' : page === 'planning' ? ({ paydays: 'Payday details', bills: 'Bills calendar', accounts: 'Loans & cards', wishlist: 'Wishlist', savings: 'Savings goals', rules: 'Auto rules' } as Record<PlanningTab, string>)[tab] : 'More'
-  const currentNav = ['home', 'history', 'bills'].includes(page) ? page : 'more'
-  const visibleCategories = all.filter((item) => item.kind === 'category' && !isTemplate(item))
+  const title = page === 'home' ? 'Payday' : page === 'history' ? 'History' : page === 'bills' ? 'Bills' : page === 'electric' ? 'Electric bill' : page === 'reports' || page === 'legacyReports' ? 'Reports' : page === 'template' ? 'Template' : page === 'activity' ? 'Detailed expenses' : page === 'legacyHome' ? 'Loans & cards' : page === 'planning' ? ({ paydays: 'Payday details', bills: 'Bills calendar', accounts: 'Loans & cards', wishlist: 'Wishlist', savings: 'Savings goals', rules: 'Auto rules' } as Record<PlanningTab, string>)[tab] : 'More'
+  const currentNav = page === 'electric' ? 'bills' : ['home', 'history', 'bills'].includes(page) ? page : 'more'
+  const visibleCategories = all.filter((item) => item.kind === 'category' && !isTemplate(item) && !isElectricBillEntry(item))
   return <div className="app-shell tracker-shell">
     <aside className="desktop-sidebar"><div className="brand"><TrackerMark size={43} /><span><strong>Tracker</strong><small>Family finance, made clearer</small></span></div><div className="sidebar-label">Your space</div><nav aria-label="Main navigation">{nav.map(({ id, label, icon: Icon }) => <button key={id} className={currentNav === id ? 'side-link active' : 'side-link'} onClick={() => setPage(id)}><Icon size={21} weight={currentNav === id ? 'fill' : 'regular'} />{label}</button>)}</nav><div className="sidebar-bottom"><div className="sidebar-quote">Every payday,<br /><em>in its place.</em></div><div className="sync-mini"><span className={online ? 'status-dot' : 'status-dot offline'} />{online ? syncMessage : 'Offline · saved locally'}</div></div></aside>
     <div className="main-column"><header className="topbar"><button className="mobile-menu" aria-label="Open more" onClick={() => setPage('more')}><List size={21} /></button><div className="topbar-title"><div className="mobile-brand"><TrackerMark size={22} /> Tracker</div><p className="eyebrow">FAMILY FINANCES</p><h1>{title}</h1></div><span className="top-sync"><span className={online ? 'status-dot' : 'status-dot offline'} />{online ? syncMessage : 'Offline · saved locally'}</span></header>
       <main><div className="screen-content" key={page}>
         {page === 'home' && <PaydayPage sheet={simpleSheet} all={all} onNew={() => void newSheet()} onSave={saveSheet} onSelect={setSelectedCycle} onHistory={() => setPage('history')} onTemplate={() => setPage('template')} />}
         {page === 'history' && <HistoryPage sheets={simpleSheets} onOpen={(id) => { setSelectedCycle(id); setPage('home') }} onNew={() => void newSheet()} />}
-        {page === 'bills' && <BillsPage all={all} onAdd={() => open('bill')} onEdit={(entry) => open(entry.kind, entry)} onPay={recordScheduled} />}
+        {page === 'bills' && <BillsPage all={all} onAdd={() => open('bill')} onEdit={(entry) => open(entry.kind, entry)} onPay={recordScheduled} onElectric={() => setPage('electric')} />}
+        {page === 'electric' && <ElectricBillPage all={all} onBack={() => setPage('bills')} onSave={saveElectricBill} />}
         {page === 'reports' && <ReportsPage sheets={simpleSheets} />}
         {page === 'template' && <TemplatePage all={all} onSave={saveTemplate} onBack={() => setPage('more')} />}
         {page === 'legacyHome' && <HomeView all={all} open={open} paydays={paydays} transactions={transactions} cycle={cycle} selectedCycle={selectedCycle} selectCycle={setSelectedCycle} go={(next, nextTab) => { setPage(next); if (nextTab) setTab(nextTab) }} loadSample={() => void loadDemo(db).then(() => toast('Sample data loaded'))} />}
@@ -190,7 +200,7 @@ function Workspace({ user }: { user: User }) {
         {page === 'more' && <section className="simple-page simple-more"><div className="simple-page-heading"><div><h2>More</h2><p>Useful tools, kept out of the daily path.</p></div></div><div className="simple-more-banner"><strong>Only what you need, when you need it.</strong><p>Your payday sheet stays first. The detailed tools are here.</p></div><h3>Payday setup</h3><div className="simple-more-menu"><button onClick={() => setPage('template')}><GearSix size={20} /> Payday template <ArrowRight size={16} /></button><button onClick={() => setPage('reports')}><ChartBar size={20} /> Reports by payday, month or year <ArrowRight size={16} /></button></div><h3>Detailed tools</h3><div className="simple-more-menu"><button onClick={() => setPage('legacyHome')}><Bank size={20} /> Loans & cards <ArrowRight size={16} /></button><button onClick={() => setPage('activity')}><Receipt size={20} /> Paid expenses & income <ArrowRight size={16} /></button><button onClick={() => { setPage('planning'); setTab('wishlist') }}><ShoppingBag size={20} /> Wishlist <ArrowRight size={16} /></button><button onClick={() => { setPage('planning'); setTab('savings') }}><Target size={20} /> Savings goals <ArrowRight size={16} /></button><button onClick={() => { setPage('planning'); setTab('rules') }}><ArrowsClockwise size={20} /> Auto rules <ArrowRight size={16} /></button><button onClick={() => setPage('legacyReports')}><ChartBar size={20} /> Detailed transaction reports <ArrowRight size={16} /></button></div><h3>Account & data</h3><div className="simple-support-grid"><section className="panel"><SectionHead title="Backup" /><p className="muted">Download a copy of your records or import an earlier backup.</p><div className="action-stack"><button className="action-row" onClick={() => void downloadBackup(db)}><DownloadSimple size={20} /> Export backup</button><button className="action-row" onClick={() => fileRef.current?.click()}><UploadSimple size={20} /> Import backup</button><input hidden ref={fileRef} type="file" accept="application/json,.json" onChange={(event) => void importBackup(event.target.files?.[0])} /></div></section><section className="panel"><SectionHead title="Cloud sync" /><p className="muted">Signed in as {user.email}.</p><div className="sync-card"><CloudArrowUp size={22} /><div><strong>{online ? syncMessage : 'Offline · changes saved here'}</strong><small>{pending} pending · {conflicts.length} conflicts</small></div></div><AuthPanel onSync={() => void runSync()} />{conflicts.map((conflict) => <div className="conflict-card" key={conflict.id}><strong>Review: {conflict.local.name}</strong><p>Device and cloud both changed this record.</p><div><button onClick={async () => { await db.entries.put({ ...conflict.local, baseVersion: conflict.remote.baseVersion, syncStatus: 'pending' }); await db.conflicts.delete(conflict.id); void runSync() }}>Use device</button><button onClick={async () => { await db.entries.put(conflict.remote); await db.conflicts.delete(conflict.id) }}>Use cloud</button></div></div>)}</section><section className="panel"><SectionHead title="Categories" action="Add category" onAction={() => open('category')} /><div className="category-cloud">{Array.from(new Set(['Food', 'Family', 'Utilities', 'Transport', 'Health', 'Shopping', 'Loans', 'Cards', ...visibleCategories.map((item) => item.name)])).map((name) => <span key={name}>{name}</span>)}</div>{visibleCategories.map((item) => <Row key={item.id} item={item} onClick={() => open('category', item)} />)}</section></div></section>}
       </div></main></div>
     <nav className="bottom-nav" aria-label="Mobile navigation">{nav.map(({ id, label, icon: Icon }) => <button key={id} className={currentNav === id ? 'active' : ''} onClick={() => setPage(id)}><Icon size={21} weight={currentNav === id ? 'fill' : 'regular'} /><span>{label}</span></button>)}</nav>
-    {form && <EntryForm key={form.entry?.id || `${form.kind}-${form.preset?.accountId || ''}`} config={form} all={all.filter((entry) => !isTemplate(entry))} busy={busy} onClose={() => setForm(null)} onSave={save} onDelete={form.entry ? () => void deleteItem(form.entry!) : undefined} />}
+    {form && <EntryForm key={form.entry?.id || `${form.kind}-${form.preset?.accountId || ''}`} config={form} all={all.filter((entry) => !isTemplate(entry) && !isElectricBillEntry(entry))} busy={busy} onClose={() => setForm(null)} onSave={save} onDelete={form.entry ? () => void deleteItem(form.entry!) : undefined} />}
     {notice && <div className="toast" role="status"><Check size={18} />{notice}</div>}
   </div>
 }

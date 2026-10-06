@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Bank, CalendarDots, CaretLeft, CaretRight, ChartBar, Check, ClockCounterClockwise, CreditCard, Plus, Trash } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, Bank, CalendarDots, CaretLeft, CaretRight, ChartBar, Check, ClockCounterClockwise, CreditCard, Lightning, Plus, Trash } from '@phosphor-icons/react'
 import { isoDate, money, shortDate, type Entry, type SheetRow } from './lib/data'
 import { scheduledForMonth, type ScheduleItem } from './lib/schedule'
 import { additionalExpense, monthSummary, sheetTemplate, sheetTotals, sheetsForPeriod, summarizeSheets, type ReportPeriod } from './lib/paydaySheet'
@@ -84,7 +84,7 @@ export function HistoryPage({ sheets, onOpen, onNew }: { sheets: Entry[]; onOpen
   </section>
 }
 
-export function BillsPage({ all, onAdd, onEdit, onPay }: { all: Entry[]; onAdd: () => void; onEdit: (entry: Entry) => void; onPay: (item: ScheduleItem) => void }) {
+export function BillsPage({ all, onAdd, onEdit, onPay, onElectric }: { all: Entry[]; onAdd: () => void; onEdit: (entry: Entry) => void; onPay: (item: ScheduleItem) => void; onElectric: () => void }) {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const items = scheduledForMonth(all, month)
@@ -94,6 +94,7 @@ export function BillsPage({ all, onAdd, onEdit, onPay }: { all: Entry[]; onAdd: 
   const monthKey = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`
   const move = (offset: number) => { setMonth(new Date(month.getFullYear(), month.getMonth() + offset, 1)); setSelectedDay(null) }
   return <section className="simple-page"><div className="simple-page-heading"><div><h2>Bills</h2><p>See what is due without opening a sheet.</p></div><button className="simple-outline-button" onClick={onAdd}><Plus size={17} /> Add</button></div>
+    <button className="simple-electric-link" onClick={onElectric}><span><Lightning size={22} weight="duotone" /></span><span><strong>Electric bill calculator</strong><small>Split the main meter bill between both houses</small></span><ArrowRight size={17} /></button>
     <div className="simple-calendar"><div className="simple-calendar-head"><button aria-label="Previous month" onClick={() => move(-1)}><CaretLeft size={17} /></button><strong>{month.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })}</strong><button aria-label="Next month" onClick={() => move(1)}><CaretRight size={17} /></button></div><div className="simple-calendar-grid">{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <b key={index}>{day}</b>)}{Array.from({ length: first }, (_, index) => <span key={`blank-${index}`} />)}{Array.from({ length: days }, (_, index) => { const day = index + 1; const due = items.some((item) => item.day === day); return <button key={day} className={`${due ? 'due' : ''} ${selectedDay === day ? 'selected' : ''}`} aria-label={`${month.toLocaleDateString('en-PH', { month: 'long' })} ${day}${due ? ', bill due' : ''}`} aria-pressed={selectedDay === day} onClick={() => setSelectedDay(selectedDay === day ? null : day)}>{day}</button> })}</div></div>
     <div className="simple-section-title"><h3>{selectedDay ? `Due ${month.toLocaleDateString('en-PH', { month: 'short' })} ${selectedDay}` : 'Due this month'}</h3>{selectedDay && <button onClick={() => setSelectedDay(null)}>See all</button>}</div>
     {visible.length ? <div className="simple-bill-list">{visible.map((item) => { const paid = all.some((tx) => tx.kind === 'transaction' && tx.accountId === item.entry.id && tx.date?.slice(0, 7) === monthKey && tx.transactionType === (item.entry.kind === 'bill' ? 'expense' : `${item.entry.kind}_payment`)); const Icon = item.entry.kind === 'loan' ? Bank : item.entry.kind === 'card' ? CreditCard : CalendarDots; return <div className="simple-bill-row" key={item.entry.id}><span className="simple-bill-icon"><Icon size={21} /></span><div><strong>{item.entry.name}</strong><small>{month.toLocaleDateString('en-PH', { month: 'short' })} {item.day}{paid ? ' · Paid' : ''}</small></div><span className="simple-bill-value"><b>{money(item.amount)}</b><button onClick={() => paid ? onEdit(item.entry) : onPay(item)}>{paid ? 'Edit bill' : 'Record payment'}</button></span></div> })}</div> : <div className="simple-empty-card compact"><CalendarDots size={29} /><h3>{selectedDay ? 'Nothing due that day' : 'No bills this month'}</h3><p>Bill and account due dates will appear here.</p></div>}
