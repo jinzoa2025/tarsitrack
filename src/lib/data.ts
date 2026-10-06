@@ -7,8 +7,10 @@ export interface SheetRow { id: string; name: string; amount: number; additional
 export interface ElectricBillInput {
   month: string
   totalBill: number
-  mainPrevious: number
-  mainLatest: number
+  mainMode?: 'readings' | 'usage'
+  mainPrevious?: number
+  mainLatest?: number
+  mainUsage?: number
   subPrevious: number
   subLatest: number
 }

@@ -24,7 +24,7 @@ The production build includes a PWA manifest, icons and a cached app shell. Brow
 - **Payday / History monthly summary:** choose a month to see expenses and remaining money across its sheets. Expand the summary for each payday and combined totals by row. Draft rows count toward expenses; remaining money waits until all sheets have income.
 - **History:** reopen earlier sheets without changing the template or other paydays.
 - **Bills:** see scheduled dates and record payments.
-- **Bills → Electric bill calculator:** enter the full bill and previous/latest readings for the main meter (both houses) and other house's sub-meter. Tracker calculates our house's remaining kWh and bill share. Saved months display our house's amount and retain the full bill and readings; saving a split does not record a payment.
+- **Bills → Electric bill calculator:** enter the full bill and either previous/latest readings or total kWh used for the main meter (both houses). Enter previous/latest readings for the other house's sub-meter. Tracker calculates our house's remaining kWh and bill share. Saved months display our house's amount and retain the bill and meter details; saving a split does not record a payment.
 - **More → Reports:** check payday, monthly and yearly totals from the simple sheets.
 - **More → Template:** set the tithe percentage and default row names and amounts for future sheets.
 - **More → Detailed tools:** the earlier loans, cards, wishlist, savings, transactions, rules and actual-spending reports remain available, alongside backup and sync.
