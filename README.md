@@ -43,6 +43,7 @@ The app requires a Supabase account. To configure a new deployment:
 2. Run [supabase/schema.sql](supabase/schema.sql) in that project's SQL editor.
 3. Copy [.env.example](.env.example) to `.env.local` and set the project URL and **publishable** key. Do not put a service role key in the browser.
 4. In Supabase Auth, create and confirm the intended account. Set the production Site URL and add the production URL to the redirect allow list. After the account works, turn off **Allow new users to sign up** if only existing accounts should have access.
+   For this deployment, use `https://cnexpense.vercel.app` as the Site URL and allow that exact URL as a redirect. The app's **Forgot password?** link sends a recovery email back to its current origin; the recovery screen lets the user set a new password. A new email is required after correcting a broken redirect.
 5. Restart Vite and sign in. The app syncs on startup and reconnect; **More → Sync now** retries manually.
 
 The `.env.local` file stays on your computer and is excluded from Git. If you later host the app, set the same two `VITE_` variables in your hosting provider's build environment. The publishable key is intended for client apps; keep every secret and service role key out of the frontend.

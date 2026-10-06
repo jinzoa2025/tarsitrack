@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { User } from '@supabase/supabase-js'
 import { ArrowRight, ArrowsClockwise, Bank, CalendarDots, ChartBar, Check, ClockCounterClockwise, CloudArrowUp, DotsThree, DownloadSimple, GearSix, List, LockKey, Receipt, ShieldCheck, ShoppingBag, Target, UploadSimple } from '@phosphor-icons/react'
@@ -40,11 +40,19 @@ function AuthPanel({ onSync }: { onSync: () => void }) {
   return <><div className="auth-actions"><button className="subtle-button" onClick={onSync}><ArrowsClockwise size={16} /> Sync now</button><button className="text-button" onClick={() => void supabase?.auth.signOut()}>Sign out</button></div>{guestCount > 0 && <div className="guest-backup"><p>{guestCount} earlier guest records are still on this device. Export them, then use Import backup to copy them into your account.</p><button className="subtle-button" onClick={() => void downloadBackup(guestDb, true)}><DownloadSimple size={16} /> Export earlier records</button></div>}</>
 }
 
-function AuthGate({ loading }: { loading: boolean }) {
+function AuthScreen({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return <div className="auth-screen"><div className="auth-glow" aria-hidden="true" /><div className="auth-layout">
+    <section className="auth-story" aria-label="Tracker"><div className="auth-brand"><span className="auth-brand-mark"><TrackerMark size={45} /></span><span><strong>Tracker</strong><small>Family finance, made clearer</small></span></div><div className="auth-story-copy"><p className="eyebrow">YOUR FAMILY FINANCES</p><h1>Every payday,<br /><em>in its place.</em></h1><p>Simple sheets for today. A clear view of the months ahead.</p></div><div className="auth-story-foot"><ShieldCheck size={20} /> Your records stay with your account and this device.</div></section>
+    <section className="auth-card"><div className="auth-lock"><LockKey size={25} weight="duotone" /></div><p className="eyebrow">PRIVATE WORKSPACE</p><h2>{title}</h2><p className="auth-description">{description}</p>{children}<div className="auth-card-foot"><span className="status-dot" /> Offline access remains available on a device with an active session.</div></section>
+  </div></div>
+}
+
+function AuthGate({ loading, notice }: { loading: boolean; notice?: string }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [working, setWorking] = useState(false)
+  const [resetMode, setResetMode] = useState(false)
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!supabase) return
@@ -57,22 +65,64 @@ function AuthGate({ loading }: { loading: boolean }) {
     } catch { setMessage('Could not reach sign-in. Check your connection and try again.') }
     finally { setWorking(false) }
   }
-  return <div className="auth-screen"><div className="auth-glow" aria-hidden="true" /><div className="auth-layout">
-    <section className="auth-story" aria-label="Tracker"><div className="auth-brand"><span className="auth-brand-mark"><TrackerMark size={45} /></span><span><strong>Tracker</strong><small>Family finance, made clearer</small></span></div><div className="auth-story-copy"><p className="eyebrow">YOUR FAMILY FINANCES</p><h1>Every payday,<br /><em>in its place.</em></h1><p>Simple sheets for today. A clear view of the months ahead.</p></div><div className="auth-story-foot"><ShieldCheck size={20} /> Your records stay with your account and this device.</div></section>
-    <section className="auth-card"><div className="auth-lock"><LockKey size={25} weight="duotone" /></div><p className="eyebrow">PRIVATE WORKSPACE</p><h2>Welcome back</h2><p className="auth-description">Sign in to open your family finance tracker.</p>{loading ? <p className="auth-state" role="status">Checking your session…</p> : !supabase ? <p className="auth-state" role="alert">Sign-in is unavailable until the Supabase project is configured.</p> : <form className="auth-gate-form" onSubmit={(event) => void signIn(event)}><label>Email address<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="auth-submit" disabled={working}>{working ? 'Signing in…' : 'Sign in'}<ArrowRight size={17} /></button>{message && <p className="auth-error" role="alert">{message}</p>}</form>}<div className="auth-card-foot"><span className="status-dot" /> Offline access remains available on a device with an active session.</div></section>
-  </div></div>
+  async function requestReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!supabase) return
+    setWorking(true); setMessage('')
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin })
+      if (error) setMessage(error.message)
+      else setMessage('If this email belongs to your account, a reset link is on its way. Open the newest email.')
+    } catch { setMessage('Could not request a reset link. Check your connection and try again.') }
+    finally { setWorking(false) }
+  }
+  return <AuthScreen title={resetMode ? 'Reset your password' : 'Welcome back'} description={resetMode ? 'Enter your account email and we’ll send a link to set a new password.' : 'Sign in to open your family finance tracker.'}>
+    {loading ? <p className="auth-state" role="status">Checking your session…</p> : !supabase ? <p className="auth-state" role="alert">Sign-in is unavailable until the Supabase project is configured.</p> : resetMode ? <form className="auth-gate-form" onSubmit={(event) => void requestReset(event)}><label>Email address<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><button className="auth-submit" disabled={working}>{working ? 'Sending…' : 'Send reset link'}<ArrowRight size={17} /></button>{message && <p className={message.startsWith('If this') ? 'auth-state' : 'auth-error'} role="status">{message}</p>}<button className="auth-secondary" type="button" onClick={() => { setResetMode(false); setMessage('') }}>Back to sign in</button></form> : <form className="auth-gate-form" onSubmit={(event) => void signIn(event)}><label>Email address<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="auth-submit" disabled={working}>{working ? 'Signing in…' : 'Sign in'}<ArrowRight size={17} /></button>{notice && <p className="auth-state" role="status">{notice}</p>}{message && <p className="auth-error" role="alert">{message}</p>}<button className="auth-secondary" type="button" onClick={() => { setResetMode(true); setMessage('') }}>Forgot password?</button></form>}
+  </AuthScreen>
+}
+
+function RecoveryGate({ ready, verified, user, onCancel, onComplete }: { ready: boolean; verified: boolean; user: User | null; onCancel: () => void; onComplete: () => void }) {
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [working, setWorking] = useState(false)
+  const [message, setMessage] = useState('')
+  async function updatePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!supabase || !verified || !user) return
+    if (password !== confirm) { setMessage('The passwords do not match.'); return }
+    setWorking(true); setMessage('')
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) { setMessage(error.message); return }
+      const { error: signOutError } = await supabase.auth.signOut()
+      if (signOutError) { setMessage('Password changed, but sign-out failed. Please sign out before using the new password.'); return }
+      onComplete()
+    } catch { setMessage('Could not change your password. Please try again.') }
+    finally { setWorking(false) }
+  }
+  return <AuthScreen title="Set a new password" description="Use the newest reset link sent to your account email.">
+    {!ready ? <p className="auth-state" role="status">Checking your reset link…</p> : !verified || !user ? <><p className="auth-state" role="alert">This reset link could not be verified. Request a fresh link from the sign-in page.</p><button className="auth-secondary" onClick={onCancel}>Back to sign in</button></> : <form className="auth-gate-form" onSubmit={(event) => void updatePassword(event)}><label>New password<input type="password" autoComplete="new-password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirm new password<input type="password" autoComplete="new-password" minLength={8} value={confirm} onChange={(event) => setConfirm(event.target.value)} required /></label><button className="auth-submit" disabled={working}>{working ? 'Saving…' : 'Save new password'}<ArrowRight size={17} /></button>{message && <p className="auth-error" role="alert">{message}</p>}</form>}
+  </AuthScreen>
 }
 
 export default function App() {
   const [session, setSession] = useState<{ ready: boolean; user: User | null }>(() => ({ ready: !supabase, user: null }))
+  const [recoveryRequested, setRecoveryRequested] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery')
+  const [recoveryVerified, setRecoveryVerified] = useState(false)
+  const [authNotice, setAuthNotice] = useState('')
   useEffect(() => {
     if (!supabase) return
     let mounted = true
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => { if (mounted) setSession({ ready: true, user: next?.user || null }) })
+    const { data: listener } = supabase.auth.onAuthStateChange((event, next) => {
+      if (!mounted) return
+      if (event === 'PASSWORD_RECOVERY') { setRecoveryRequested(true); setRecoveryVerified(true) }
+      setSession({ ready: true, user: next?.user || null })
+    })
     void supabase.auth.getSession().then(({ data }) => { if (mounted) setSession((current) => current.ready ? current : { ready: true, user: data.session?.user || null }) }).catch(() => { if (mounted) setSession((current) => current.ready ? current : { ready: true, user: null }) })
     return () => { mounted = false; listener.subscription.unsubscribe() }
   }, [])
-  if (!session.ready || !session.user) return <AuthGate loading={!session.ready} />
+  if (recoveryRequested || recoveryVerified) return <RecoveryGate ready={session.ready} verified={recoveryVerified} user={session.user} onCancel={() => { void (async () => { try { await supabase?.auth.signOut() } finally { setRecoveryRequested(false); setRecoveryVerified(false) } })() }} onComplete={() => { setRecoveryRequested(false); setRecoveryVerified(false); setAuthNotice('Password changed. Sign in with your new password.') }} />
+  if (!session.ready || !session.user) return <AuthGate loading={!session.ready} notice={authNotice} />
   return <Workspace key={session.user.id} user={session.user} />
 }
 
